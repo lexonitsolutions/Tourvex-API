@@ -4,9 +4,11 @@ import { InjectModel } from '@nestjs/mongoose';
 import { randomUUID } from 'node:crypto';
 import { Model, Types } from 'mongoose';
 import { BookingsService } from '../bookings/bookings.service';
+import { ActivityCapacityService } from '../catalog/activity-capacity.service';
 import { CatalogService, type PreparedItem } from '../catalog/catalog.service';
 import { appError } from '../common/app-error';
 import { AuthenticatedUser } from '../common/decorators/current-user.decorator';
+import { TransactionService } from '../common/database/transaction.service';
 import { SettingsService } from '../admin/settings/settings.service';
 import { CurrencyService } from '../currency/currency.service';
 import { indicativeDisplay } from '../currency/display';
@@ -45,6 +47,7 @@ export class CheckoutService implements OnModuleInit, OnModuleDestroy {
   private readonly isTest: boolean;
   private readonly sampleVisible: boolean;
   private timer?: NodeJS.Timeout;
+  private ticks = 0;
 
   constructor(
     @InjectModel(CartSession.name) private readonly carts: Model<CartSession>,
@@ -55,6 +58,8 @@ export class CheckoutService implements OnModuleInit, OnModuleDestroy {
     private readonly payments: PaymentsService,
     private readonly currency: CurrencyService,
     private readonly settings: SettingsService,
+    private readonly capacity: ActivityCapacityService,
+    private readonly transactions: TransactionService,
     config: ConfigService,
   ) {
     this.sweepSeconds = config.get<number>('CHECKOUT_SWEEP_SECONDS', 60);
@@ -70,7 +75,11 @@ export class CheckoutService implements OnModuleInit, OnModuleDestroy {
 
   onModuleInit() {
     if (this.isTest) return;
-    this.timer = setInterval(() => void this.sweep(), this.sweepSeconds * 1000);
+    this.timer = setInterval(() => {
+      void this.sweep();
+      // Every fifth tick (5 minutes by default): finish payments whose invoice/voucher step failed.
+      if (++this.ticks % 5 === 0) void this.orders.reconcilePaidOrders();
+    }, this.sweepSeconds * 1000);
     this.timer.unref();
   }
 
@@ -323,6 +332,7 @@ export class CheckoutService implements OnModuleInit, OnModuleDestroy {
     }
 
     const order = await this.ensureOrder(cart);
+    cart.orderReference = order.orderReference;
     const bookingReferences = order.bookingReferences;
     const base = { orderReference: order.orderReference, sessionId: cart._id.toString() };
     const first = { bookingReference: bookingReferences[0], bookingReferences };
@@ -448,65 +458,100 @@ export class CheckoutService implements OnModuleInit, OnModuleDestroy {
     return true;
   }
 
-  private async ensureOrder(cart: CartSessionDocument) {
-    let order = await this.orders.findByCart(cart._id.toString());
-    if (!order) {
-      order = await this.orders.createOrder({
-        orderReference: generateOrderReference(),
-        userId: cart.userId,
-        cartId: cart._id,
-        status: 'pending_payment',
-        active: true,
-        subtotalMinor: cart.subtotalMinor,
-        discountMinor: cart.discountMinor,
-        taxMinor: cart.taxMinor,
-        totalMinor: cart.totalMinor,
-        currency: CURRENCY,
-        promoCode: cart.promoCode,
-        paymentMode: this.payments.isMock ? 'mock' : 'stripe',
+  /**
+   * The order and ALL of its bookings are created in one transaction: either the whole order exists or nothing does,
+   * so a crash can never leave an order without (some of) its bookings. Inside the transaction the capacity locks
+   * of every booked day are taken and capacity is checked again, so two customers racing for the last places cannot
+   * both get them: the second one fails with DATE_UNAVAILABLE. Safe to repeat (it resumes an existing order).
+   */
+  private async ensureOrder(cart: CartSessionDocument, attempt = 0): Promise<NonNullable<Awaited<ReturnType<OrdersService['findByCart']>>>> {
+    const cartId = cart._id.toString();
+    const existing = await this.orders.findByCart(cartId);
+    if (existing && existing.bookingReferences.length >= cart.items.length) return existing;
+
+    const keys = cart.items.map((item) => ({ slug: item.activitySlug, optionId: item.optionId, day: item.date }));
+    await this.capacity.ensureLocks(keys);
+    const items = cart.items;
+    const now = new Date();
+
+    try {
+      return await this.transactions.run(async (session) => {
+        await this.capacity.lock(keys, session);
+        // Re-read inside the transaction: a concurrent request for this cart may have just committed the order.
+        let order = await this.orders.findByCart(cartId, session);
+        if (order && order.bookingReferences.length >= items.length) return order;
+        const orderReference = order?.orderReference ?? generateOrderReference();
+
+        await this.catalog.assertCapacity(
+          items.map((item) => ({ activitySlug: item.activitySlug, optionId: item.optionId, date: item.date, adults: item.adults, children: item.children })),
+          { orderReference, session, now },
+        );
+
+        order ??= await this.orders.createOrder(
+          {
+            orderReference,
+            userId: cart.userId,
+            cartId: cart._id,
+            status: 'pending_payment',
+            active: true,
+            subtotalMinor: cart.subtotalMinor,
+            discountMinor: cart.discountMinor,
+            taxMinor: cart.taxMinor,
+            totalMinor: cart.totalMinor,
+            currency: CURRENCY,
+            promoCode: cart.promoCode,
+            paymentMode: this.payments.isMock ? 'mock' : 'stripe',
+          },
+          session,
+        );
+
+        const references: string[] = [];
+        for (const item of items) {
+          const booking = await this.bookings.createActivityBooking(
+            {
+              orderReference: order.orderReference,
+              cartItemId: item.itemId,
+              customerId: cart.userId.toString(),
+              activitySlug: item.activitySlug,
+              title: item.activityTitle,
+              image: item.image || undefined,
+              location: item.locationName,
+              optionId: item.optionId,
+              optionName: item.optionName,
+              transferType: item.transferType,
+              startTime: item.startTime,
+              serviceDay: item.date,
+              adults: item.adults,
+              children: item.children,
+              adultUnitPrice: item.adultPrice.amount,
+              pickupRequired: item.pickupRequired,
+              pickup: item.pickup,
+              additional: item.additional,
+              customer: cart.customer!,
+              priceLines: item.lines,
+              subtotal: fromMinor(item.subtotalMinor),
+              discount: fromMinor(item.discountMinor),
+              tax: fromMinor(item.taxMinor),
+              total: fromMinor(item.totalMinor),
+              promoCode: cart.promoCode,
+              refundable: item.refundable,
+              freeCancellationUntil: item.freeCancellationUntil,
+              holdExpiresAt: cart.expiresAt,
+            },
+            session,
+          );
+          references.push(booking.reference);
+        }
+        await this.orders.attachBookings(order.orderReference, references, session);
+        await this.carts.updateOne({ _id: cart._id }, { $set: { orderReference: order.orderReference } }, { session }).exec();
+        order.bookingReferences = references;
+        return order;
       });
-      cart.orderReference = order.orderReference;
-      await this.carts.updateOne({ _id: cart._id }, { $set: { orderReference: order.orderReference } }).exec();
+    } catch (error) {
+      // Lost a race on the one-order-per-cart index: the other request committed, so read its order instead.
+      if ((error as { code?: number }).code === 11000 && attempt < 2) return this.ensureOrder(cart, attempt + 1);
+      throw error;
     }
-    if (order.bookingReferences.length < cart.items.length) {
-      const references: string[] = [];
-      for (const item of cart.items) {
-        const booking = await this.bookings.createActivityBooking({
-          orderReference: order.orderReference,
-          cartItemId: item.itemId,
-          customerId: cart.userId.toString(),
-          activitySlug: item.activitySlug,
-          title: item.activityTitle,
-          image: item.image || undefined,
-          location: item.locationName,
-          optionId: item.optionId,
-          optionName: item.optionName,
-          transferType: item.transferType,
-          startTime: item.startTime,
-          serviceDay: item.date,
-          adults: item.adults,
-          children: item.children,
-          adultUnitPrice: item.adultPrice.amount,
-          pickupRequired: item.pickupRequired,
-          pickup: item.pickup,
-          additional: item.additional,
-          customer: cart.customer!,
-          priceLines: item.lines,
-          subtotal: fromMinor(item.subtotalMinor),
-          discount: fromMinor(item.discountMinor),
-          tax: fromMinor(item.taxMinor),
-          total: fromMinor(item.totalMinor),
-          promoCode: cart.promoCode,
-          refundable: item.refundable,
-          freeCancellationUntil: item.freeCancellationUntil,
-          holdExpiresAt: cart.expiresAt,
-        });
-        references.push(booking.reference);
-      }
-      await this.orders.attachBookings(order.orderReference, references);
-      order.bookingReferences = references;
-    }
-    return order;
   }
 
   private async completedReplay(userId: string, now: Date) {

@@ -102,7 +102,9 @@ export const CartItemSchema = SchemaFactory.createForClass(CartItem);
 export class CartSession {
   _id: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, required: true, ref: 'User', index: true })
+  // No `index: true` here: it would create a plain index named userId_1, which collides with the unique partial
+  // index below (same key, same default name), and MongoDB would silently never build the unique one.
+  @Prop({ type: Types.ObjectId, required: true, ref: 'User' })
   userId: Types.ObjectId;
 
   @Prop({ type: String, enum: CART_STATUSES, default: 'open', index: true })
@@ -148,6 +150,7 @@ export class CartSession {
 }
 
 export const CartSessionSchema = SchemaFactory.createForClass(CartSession);
-CartSessionSchema.index({ userId: 1 }, { unique: true, partialFilterExpression: { active: true } });
+// Explicit name: enforces "at most one active cart per customer" even under concurrent requests.
+CartSessionSchema.index({ userId: 1 }, { name: 'userId_active_unique', unique: true, partialFilterExpression: { active: true } });
 CartSessionSchema.index({ status: 1, expiresAt: 1 });
 CartSessionSchema.index({ userId: 1, createdAt: -1 });

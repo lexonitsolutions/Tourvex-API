@@ -1,5 +1,6 @@
 import { HttpException, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { CacheService } from '../common/cache/cache.service';
 import { InjectModel } from '@nestjs/mongoose';
 import { createHash } from 'node:crypto';
 import { Model } from 'mongoose';
@@ -40,6 +41,7 @@ export class CmsService {
 
   constructor(
     @InjectModel(CmsDocument.name) private readonly docs: Model<CmsDocument>,
+    private readonly cache: CacheService,
     config: ConfigService,
   ) {
     this.previewSecret = derivePreviewSecret(
@@ -132,7 +134,13 @@ export class CmsService {
     return { body: this.publicItem(key, locale, doc), preview: false };
   }
 
-  async getPublicBatch(keysParam: string, localeInput?: string, previewToken?: string) {
+  /** Published content is the same for every visitor, so it is cached; a draft preview never is. */
+  getPublicBatch(keysParam: string, localeInput?: string, previewToken?: string) {
+    if (previewToken) return this.getPublicBatchUncached(keysParam, localeInput, previewToken);
+    return this.cache.wrap('cms', `batch:${localeInput ?? ''}:${keysParam}`, 30, () => this.getPublicBatchUncached(keysParam, localeInput));
+  }
+
+  private async getPublicBatchUncached(keysParam: string, localeInput?: string, previewToken?: string) {
     const keys = [...new Set(keysParam.split(',').map((k) => k.trim()).filter(Boolean))];
     if (keys.length === 0) throw appError(400, 'KEYS_REQUIRED', 'keys is required');
     if (keys.length > MAX_BATCH_KEYS) throw appError(400, 'TOO_MANY_KEYS', `At most ${MAX_BATCH_KEYS} keys per request`);
@@ -292,6 +300,7 @@ export class CmsService {
       .lean<Lean>()
       .exec();
     if (!updated) throw await this.conflict(schema, locale);
+    await this.cache.invalidate('cms');
     return { view: this.view(schema, locale, updated), changes: summarizeChanges(before, value) };
   }
 

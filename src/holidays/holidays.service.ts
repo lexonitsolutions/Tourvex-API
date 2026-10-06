@@ -1,3 +1,4 @@
+import { CacheService } from '../common/cache/cache.service';
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { LeadsService } from '../leads/leads.service';
@@ -63,6 +64,7 @@ export class HolidaysService {
     @InjectModel(HolidayBanner.name) private readonly banners: Model<HolidayBanner>,
     @InjectModel(HolidayEnquiry.name) private readonly enquiries: Model<HolidayEnquiry>,
     private readonly leads: LeadsService,
+    private readonly cache: CacheService,
     config: ConfigService,
   ) {
     const nodeEnv = config.get<string>('NODE_ENV');
@@ -74,7 +76,11 @@ export class HolidaysService {
     return publicVisibilityFilter(this.showSamples);
   }
 
-  async home() {
+  home() {
+    return this.cache.wrap('holidays', 'home', 60, () => this.homeUncached());
+  }
+
+  private async homeUncached() {
     const [banners, cities, countries, collections] = await Promise.all([
       this.banners
         .find({ published: true })
@@ -104,7 +110,12 @@ export class HolidaysService {
     };
   }
 
-  async list(query: ListHolidaysDto, admin = false) {
+  list(query: ListHolidaysDto, admin = false) {
+    if (admin) return this.listUncached(query, admin);
+    return this.cache.wrap('holidays', `list:${JSON.stringify(query)}`, 60, () => this.listUncached(query, admin));
+  }
+
+  private async listUncached(query: ListHolidaysDto, admin = false) {
     const base = admin ? {} : this.visible;
     const filter = buildHolidayFilter(query, base);
     const { addFields, sort } = buildHolidaySort(query.sort);
@@ -132,7 +143,11 @@ export class HolidaysService {
     };
   }
 
-  async findBySlug(slug: string, currency = CURRENCY) {
+  findBySlug(slug: string, currency = CURRENCY) {
+    return this.cache.wrap('holidays', `slug:${slug}:${currency}`, 60, () => this.findBySlugUncached(slug, currency));
+  }
+
+  private async findBySlugUncached(slug: string, currency = CURRENCY) {
     const doc = await this.holidays
       .findOne({ slug, ...this.visible })
       .lean<Lean>()
@@ -161,6 +176,12 @@ export class HolidaysService {
   }
 
   async create(dto: CreateHolidayDto) {
+    const result = await this.createUncached(dto);
+    await this.cache.invalidate('holidays');
+    return result;
+  }
+
+  private async createUncached(dto: CreateHolidayDto) {
     const slug = dto.slug ?? slugify(dto.title);
     if (!slug) throw new BadRequestException('Could not derive a slug from the title; provide one');
     try {
@@ -176,6 +197,12 @@ export class HolidaysService {
   }
 
   async update(id: string, dto: UpdateHolidayDto) {
+    const result = await this.updateUncached(id, dto);
+    await this.cache.invalidate('holidays');
+    return result;
+  }
+
+  private async updateUncached(id: string, dto: UpdateHolidayDto) {
     const changes: Record<string, unknown> = { ...dto };
     if (dto.durationNights !== undefined && dto.durationDays === undefined) {
       changes.durationDays = dto.durationNights + 1;
@@ -193,6 +220,12 @@ export class HolidaysService {
   }
 
   async remove(id: string) {
+    const result = await this.removeUncached(id);
+    await this.cache.invalidate('holidays');
+    return result;
+  }
+
+  private async removeUncached(id: string) {
     const deleted = await this.holidays.findByIdAndDelete(id).select({ _id: 1 }).lean().exec();
     if (!deleted) throw new NotFoundException('Holiday package not found');
     return { id, deleted: true };

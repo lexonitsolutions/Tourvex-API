@@ -1,3 +1,4 @@
+import { CacheService } from '../common/cache/cache.service';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
@@ -26,6 +27,7 @@ import {
   validateOptions,
   type DayStatus,
 } from './activity-booking.utils';
+import type { ClientSession } from 'mongoose';
 import { ActivityCapacityService } from './activity-capacity.service';
 import { AvailabilityQueryDto, QuoteDto } from './dto/activity-booking.dto';
 import { ListActivitiesDto } from './dto/list-activities.dto';
@@ -85,6 +87,7 @@ export class CatalogService {
     private readonly reviews: ReviewsService,
     private readonly currency: CurrencyService,
     private readonly settings: SettingsService,
+    private readonly cache: CacheService,
     config: ConfigService,
   ) {
     const nodeEnv = config.get<string>('NODE_ENV');
@@ -92,7 +95,11 @@ export class CatalogService {
     this.sampleDetailsVisible = shouldExposeSamples(nodeEnv, config.get<string>('ACTIVITY_SAMPLE_DETAILS'));
   }
 
-  async listActivities(query: ListActivitiesDto) {
+  listActivities(query: ListActivitiesDto) {
+    return this.cache.wrap('catalog', `list:${JSON.stringify(query)}`, 60, () => this.listActivitiesUncached(query));
+  }
+
+  private async listActivitiesUncached(query: ListActivitiesDto) {
     const filter: Record<string, any> = { published: true };
     if (query.search) filter.$text = { $search: query.search };
     if (query.destination) filter.destinations = query.destination;
@@ -116,13 +123,23 @@ export class CatalogService {
     };
   }
 
-  async findBySlug(slug: string, locale = 'en') {
+  findBySlug(slug: string, locale = 'en') {
+    return this.cache.wrap('catalog', `slug:${slug}:${locale}`, 60, () => this.findBySlugUncached(slug, locale));
+  }
+
+  private async findBySlugUncached(slug: string, locale = 'en') {
     const item = await this.loadVisible(slug);
     const rating = await this.reviews.summaryFor(slug);
     return { ...this.localize(item, locale), rating };
   }
 
   async upsertMany(items: Array<Record<string, unknown>>) {
+    const result = await this.upsertManyUncached(items);
+    await this.cache.invalidate('catalog');
+    return result;
+  }
+
+  private async upsertManyUncached(items: Array<Record<string, unknown>>) {
     if (!items.length) return { imported: 0 };
     const operations: any[] = items.map((item) => ({
       updateOne: {
@@ -141,6 +158,12 @@ export class CatalogService {
 
   /** Staff edit of the detail block. Arrays (options, gallery, ...) are replaced wholesale. */
   async updateDetails(id: string, dto: UpdateActivityDetailsDto) {
+    const result = await this.updateDetailsUncached(id, dto);
+    await this.cache.invalidate('catalog');
+    return result;
+  }
+
+  private async updateDetailsUncached(id: string, dto: UpdateActivityDetailsDto) {
     if (dto.options) {
       const problem = validateOptions(dto.options);
       if (problem) throw appError(400, 'INVALID_OPTIONS', problem);
@@ -269,6 +292,34 @@ export class CatalogService {
       subtotalMinor,
       freeCancellationUntil: freeCancellationUntil(input.date, option, activity.freeCancellationHours),
     };
+  }
+
+  /**
+   * Re-checks capacity for items that are about to become bookings. Runs inside the order transaction after the
+   * capacity locks are held, ignores the order's own bookings, and applies the same rules as `prepareItem`, so a
+   * competing checkout that committed first makes this one fail with DATE_UNAVAILABLE instead of overselling.
+   */
+  async assertCapacity(
+    items: { activitySlug: string; optionId: string; date: string; adults: number; children: number }[],
+    context: { orderReference: string; session: ClientSession; now?: Date },
+  ): Promise<void> {
+    const now = context.now ?? new Date();
+    for (const item of items) {
+      const { option } = await this.loadOption(item.activitySlug, item.optionId);
+      const usage = await this.capacity.usage(item.activitySlug, option.id, item.date, item.date, now, undefined, {
+        excludeOrderReference: context.orderReference,
+        session: context.session,
+      });
+      const failure = checkBookingRequest({
+        option,
+        date: item.date,
+        adults: item.adults,
+        children: item.children,
+        now,
+        booked: usage.get(item.date) ?? 0,
+      });
+      if (failure) throw appError(failure.status, failure.code, failure.message);
+    }
   }
 
   /** Bookable activity + option, or 404. Sample details hidden in production make options unbookable. */

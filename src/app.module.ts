@@ -19,6 +19,8 @@ import { CruisesModule } from './cruises/cruises.module';
 import { EventsModule } from './events/events.module';
 import { CurrencyInterceptor } from './currency/currency.interceptor';
 import { CurrencyModule } from './currency/currency.module';
+import { CacheModule } from './common/cache/cache.module';
+import { DatabaseModule } from './common/database/database.module';
 import { RolesGuard } from './common/guards/roles.guard';
 import { validateEnvironment } from './config/env.validation';
 import { BillingModule } from './crm/billing/billing.module';
@@ -54,6 +56,8 @@ import { TicketsModule } from './tickets/tickets.module';
       }),
     }),
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 120 }]),
+    DatabaseModule,
+    CacheModule,
     ClerkModule,
     AuthModule,
     UsersModule,

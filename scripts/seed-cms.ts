@@ -2,6 +2,7 @@ import 'reflect-metadata';
 import { resolve } from 'node:path';
 import type { ConfigService } from '@nestjs/config';
 import mongoose from 'mongoose';
+import { CacheService } from '../src/common/cache/cache.service';
 import { CmsService } from '../src/cms/cms.service';
 import { CmsDocument, CmsDocumentSchema } from '../src/cms/cms.schema';
 import { listDocumentKeys } from '../src/cms/schemas';
@@ -31,7 +32,9 @@ async function run() {
   const model = mongoose.model<CmsDocument>(CmsDocument.name, CmsDocumentSchema);
   await model.init();
   const config = { get: (key: string, fallback?: unknown) => process.env[key] ?? fallback } as unknown as ConfigService;
-  const service = new CmsService(model, config);
+  // The script has no running cache to clear (the API's own copy expires within 30 seconds), so it uses a disabled one.
+  const cache = new CacheService({ get: () => 'false' } as unknown as ConfigService);
+  const service = new CmsService(model, cache, config);
 
   const result: Record<string, string> = {};
   for (const key of known) result[key] = await service.seed(key, forced.has(key));

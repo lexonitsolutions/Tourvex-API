@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { randomBytes } from 'node:crypto';
+import type { ClientSession } from 'mongoose';
 import { Model, Types } from 'mongoose';
 import { AuthenticatedUser } from '../common/decorators/current-user.decorator';
 import { Role } from '../common/enums/role.enum';
@@ -151,7 +152,7 @@ export class BookingsService {
    * One Booking per cart item, idempotent per (order, cart item): retries after a crash or a
    * concurrent pay return the existing booking instead of creating a second one.
    */
-  async createActivityBooking(input: ActivityBookingInput) {
+  async createActivityBooking(input: ActivityBookingInput, session?: ClientSession) {
     const key = { orderReference: input.orderReference, cartItemId: input.cartItemId };
     const document = {
       reference: `TVX-${new Date().getUTCFullYear()}-${randomBytes(4).toString('hex').toUpperCase()}`,
@@ -196,11 +197,12 @@ export class BookingsService {
         .findOneAndUpdate(
           key,
           { $setOnInsert: Object.fromEntries(Object.entries(document).filter(([, value]) => value !== undefined)) },
-          { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true },
+          { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true, session },
         )
         .exec();
     } catch (error) {
-      if ((error as { code?: number }).code !== 11000) throw error;
+      // Inside a transaction a duplicate key aborts it: let the caller's transaction retry instead of reading on.
+      if (session || (error as { code?: number }).code !== 11000) throw error;
       const existing = await this.bookings.findOne(key).exec();
       if (!existing) throw error;
       return existing;
@@ -226,6 +228,58 @@ export class BookingsService {
       confirmed.push(await this.confirmPayment(_id.toString(), paymentReference));
     }
     return confirmed;
+  }
+
+  /**
+   * Database half of confirming a paid order, for use inside the order transaction: flips every pending_payment
+   * booking of the order to confirmed. Bookings that are already confirmed are returned as settled (a repeat of a
+   * webhook); any other status is skipped and logged, because the money was taken and staff must review it.
+   * Invoices, vouchers, inventory and notices are NOT touched here: they run after the commit in `finalizeConfirmed`.
+   */
+  async confirmOrderBookings(orderReference: string, paymentReference: string, session: ClientSession) {
+    const rows = await this.bookings.find({ orderReference }).session(session).lean().exec();
+    const flipped: Array<Booking & { _id: Types.ObjectId }> = [];
+    const settled: Array<Booking & { _id: Types.ObjectId }> = [];
+    for (const row of rows) {
+      if (row.status === BookingStatus.Confirmed) {
+        settled.push(row);
+      } else if (row.status === BookingStatus.PendingPayment) {
+        const updated = await this.bookings
+          .findOneAndUpdate(
+            { _id: row._id, status: BookingStatus.PendingPayment },
+            { $set: { status: BookingStatus.Confirmed, paymentReference, confirmedAt: new Date() }, $unset: { holdExpiresAt: 1 } },
+            { returnDocument: 'after', session },
+          )
+          .lean()
+          .exec();
+        if (updated) flipped.push(updated);
+      } else {
+        this.logger.error(`Booking ${row.reference} is ${row.status} but order ${orderReference} was paid; needs manual review/refund`);
+      }
+    }
+    return { flipped, settled };
+  }
+
+  /**
+   * Runs after the order transaction committed: inventory for the bookings that just flipped, then the idempotent
+   * invoice and voucher for every confirmed booking (a failure is logged and retried by the reconciliation sweep).
+   */
+  async finalizeConfirmed(flipped: Array<Booking & { _id: Types.ObjectId }>, settled: Array<Booking & { _id: Types.ObjectId }>) {
+    for (const booking of flipped) {
+      // Activity bookings have no inventory SKU: their capacity is counted from bookings and holds.
+      if (booking.sku) await this.inventory.confirm(booking.sku, booking.quantity);
+    }
+    for (const booking of [...flipped, ...settled]) await this.afterConfirmed(booking);
+  }
+
+  /** True while a paid order still has a booking waiting to be confirmed, or a confirmed one without its voucher. */
+  async needsFinalizing(orderReference: string): Promise<boolean> {
+    const rows = await this.bookings.find({ orderReference }).select('_id status').lean().exec();
+    if (rows.some((row) => row.status === BookingStatus.PendingPayment)) return true;
+    for (const row of rows) {
+      if (row.status === BookingStatus.Confirmed && !(await this.vouchers.findByBooking(row._id))) return true;
+    }
+    return false;
   }
 
   /** Releases the capacity held by an order's unpaid bookings. */

@@ -1,10 +1,12 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
 import { HydratedDocument, Model, QueryFilter, Types } from 'mongoose';
 import { hasPermission } from '../admin/permissions';
 import { operatingToday } from '../catalog/activity-booking.utils';
 import { CatalogService } from '../catalog/catalog.service';
 import { appError } from '../common/app-error';
+import { TransactionService } from '../common/database/transaction.service';
 import { ServiceType } from '../common/enums/service-type.enum';
 import { appendNote, buildNote } from '../common/notes/notes';
 import { buildPagination, escapeRegex, parseSort, skipFor } from '../common/query/paging-query.dto';
@@ -52,9 +54,15 @@ const BOOKING_SORTS = ['createdAt', 'serviceDate', 'total', 'status', 'reference
 
 type BookingDoc = Booking & { _id: Types.ObjectId };
 
+/** A refund that is still `pending` after this long was interrupted (crash, deploy): the sweep finishes it. */
+const REFUND_STUCK_MS = 3 * 60_000;
+const REFUND_RECOVERY_SECONDS = 120;
+
 @Injectable()
-export class AdminBookingsService {
+export class AdminBookingsService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(AdminBookingsService.name);
+  private readonly isTest: boolean;
+  private timer?: NodeJS.Timeout;
 
   constructor(
     @InjectModel(Booking.name) private readonly bookings: Model<Booking>,
@@ -68,7 +76,21 @@ export class AdminBookingsService {
     private readonly catalog: CatalogService,
     private readonly inventory: InventoryService,
     private readonly notifications: NotificationsService,
-  ) {}
+    private readonly transactions: TransactionService,
+    config: ConfigService,
+  ) {
+    this.isTest = config.get<string>('NODE_ENV') === 'test';
+  }
+
+  onModuleInit() {
+    if (this.isTest) return;
+    this.timer = setInterval(() => void this.recoverPendingRefunds(), REFUND_RECOVERY_SECONDS * 1000);
+    this.timer.unref();
+  }
+
+  onModuleDestroy() {
+    if (this.timer) clearInterval(this.timer);
+  }
 
   // ---------------------------------------------------------------- lists
 
@@ -545,6 +567,7 @@ export class AdminBookingsService {
         .exec();
 
     const idempotencyKey = dto.idempotencyKey ? `${booking._id.toString()}:${dto.idempotencyKey}` : undefined;
+    const providerKey = `refund:${booking._id.toString()}:${refundedBeforeMinor}:${amountMinor}${dto.idempotencyKey ? `:${dto.idempotencyKey}` : ''}`;
     let row: HydratedDocument<Refund>;
     try {
       row = await this.refunds.create({
@@ -559,6 +582,9 @@ export class AdminBookingsService {
         status: 'pending',
         paymentReference: booking.paymentReference,
         idempotencyKey,
+        providerKey,
+        refundedBeforeMinor,
+        refundedAfterMinor,
         actorId: new Types.ObjectId(actor.id),
         actorEmail: actor.email,
       });
@@ -576,7 +602,7 @@ export class AdminBookingsService {
       provider = await this.payments.refundPayment({
         paymentReference: booking.paymentReference ?? '',
         amountMinor,
-        idempotencyKey: `refund:${booking._id.toString()}:${refundedBeforeMinor}:${amountMinor}${dto.idempotencyKey ? `:${dto.idempotencyKey}` : ''}`,
+        idempotencyKey: providerKey,
         bookingReference: booking.reference,
       });
     } catch (error) {
@@ -585,37 +611,126 @@ export class AdminBookingsService {
       throw appError(502, 'REFUND_FAILED', `The payment provider could not refund this amount: ${(error as Error).message}`);
     }
 
-    const now = new Date();
-    const fully = refundedAfterMinor >= toMinorUnits(booking.total);
-    const nextStatus = statusAfterRefund(booking.status, toMinorUnits(booking.total), refundedAfterMinor);
-    await this.refunds
-      .updateOne({ _id: row._id }, { $set: { status: 'succeeded', mode: provider.mode, providerRefundId: provider.providerRefundId } })
-      .exec();
-    await this.bookings
-      .updateOne(
-        { _id: booking._id },
-        {
-          ...(nextStatus !== booking.status && { $set: { status: nextStatus } }),
-          $push: { events: { type: 'refunded' as BookingEventType, at: now, actorId: new Types.ObjectId(actor.id), actorName: actor.email, text: `${booking.currency} ${amount.toFixed(2)}: ${dto.reason}`.slice(0, 500) } },
-        },
-      )
-      .exec();
-    if (fully) await this.vouchers.voidForBooking(booking._id, 'Booking refunded', { id: actor.id, name: actor.email });
+    await this.settleRefund(row, booking, provider, dto.reason, { id: actor.id, email: actor.email });
+    const saved = await this.refunds.findById(row._id).lean().exec();
+    return { refund: this.refundView(saved!), replayed: false, booking: await this.get(booking._id.toString(), actor) };
+  }
 
+  /**
+   * Books a refund the provider already made: the ledger row becomes succeeded and the booking gets its new
+   * status and timeline entry in ONE transaction (all or nothing), then the voucher is voided when fully refunded
+   * and the credit note is issued (idempotent per refund; a failure is logged and never undoes the refund).
+   * Repeating it for an already settled refund changes nothing.
+   */
+  private async settleRefund(
+    row: { _id: Types.ObjectId; amountMinor: number; amount: number; refundedBeforeMinor?: number; refundedAfterMinor?: number },
+    booking: BookingDoc,
+    provider: Awaited<ReturnType<PaymentsService['refundPayment']>>,
+    reason: string,
+    actor: { id: string; email: string },
+  ) {
+    const totalMinor = toMinorUnits(booking.total);
+    const refundedAfterMinor = row.refundedAfterMinor ?? toMinorUnits(booking.refundedAmount ?? 0) + row.amountMinor;
+    const refundedBeforeMinor = row.refundedBeforeMinor ?? refundedAfterMinor - row.amountMinor;
+    const fully = refundedAfterMinor >= totalMinor;
+    const nextStatus = statusAfterRefund(booking.status, totalMinor, refundedAfterMinor);
+    const now = new Date();
+
+    const settled = await this.transactions.run(async (session) => {
+      const marked = await this.refunds
+        .updateOne(
+          { _id: row._id, status: 'pending' },
+          { $set: { status: 'succeeded', mode: provider.mode, providerRefundId: provider.providerRefundId } },
+          { session },
+        )
+        .exec();
+      if (marked.modifiedCount === 0) return false; // already settled by another run
+      await this.bookings
+        .updateOne(
+          { _id: booking._id },
+          {
+            ...(nextStatus !== booking.status && { $set: { status: nextStatus } }),
+            $push: {
+              events: {
+                type: 'refunded' as BookingEventType,
+                at: now,
+                actorId: new Types.ObjectId(actor.id),
+                actorName: actor.email,
+                text: `${booking.currency} ${row.amount.toFixed(2)}: ${reason}`.slice(0, 500),
+              },
+            },
+          },
+          { session },
+        )
+        .exec();
+      return true;
+    });
+    if (!settled) return;
+
+    if (fully) await this.vouchers.voidForBooking(booking._id, 'Booking refunded', { id: actor.id, name: actor.email });
     try {
       const note = await this.billing.createCreditNote({
-        booking: booking,
+        booking,
         refundId: row._id,
-        refundMinor: amountMinor,
+        refundMinor: row.amountMinor,
         alreadyRefundedMinor: refundedBeforeMinor,
-        reason: dto.reason,
+        reason,
       });
       await this.refunds.updateOne({ _id: row._id }, { $set: { creditNoteNumber: note.invoiceNumber } }).exec();
     } catch (error) {
       this.logger.error(`Credit note for refund ${row._id.toString()} failed: ${(error as Error).message}`);
     }
-    const saved = await this.refunds.findById(row._id).lean().exec();
-    return { refund: this.refundView(saved!), replayed: false, booking: await this.get(booking._id.toString(), actor) };
+  }
+
+  /**
+   * Finishes refunds that stayed `pending` (the process stopped after reserving the amount, or after the provider
+   * refunded but before the ledger was updated). The provider call repeats with the SAME idempotency key, so Stripe
+   * returns the refund it already made instead of making another; a provider failure releases the reservation.
+   * Returns how many refunds it resolved. Never throws.
+   */
+  async recoverPendingRefunds(now = new Date()): Promise<number> {
+    let resolved = 0;
+    try {
+      const stuck = await this.refunds
+        .find({ status: 'pending', providerKey: { $exists: true }, createdAt: { $lte: new Date(now.getTime() - REFUND_STUCK_MS) } })
+        .sort({ createdAt: 1 })
+        .limit(50)
+        .lean()
+        .exec();
+      for (const row of stuck) {
+        try {
+          const booking = (await this.bookings.findById(row.bookingId).lean().exec()) as BookingDoc | null;
+          if (!booking) continue;
+          const actor = { id: row.actorId.toString(), email: row.actorEmail ?? 'system' };
+          let provider: Awaited<ReturnType<PaymentsService['refundPayment']>>;
+          try {
+            provider = await this.payments.refundPayment({
+              paymentReference: row.paymentReference ?? '',
+              amountMinor: row.amountMinor,
+              idempotencyKey: row.providerKey!,
+              bookingReference: row.bookingReference,
+            });
+          } catch (error) {
+            await this.bookings
+              .updateOne({ _id: booking._id }, [{ $set: { refundedAmount: { $round: [{ $max: [0, { $subtract: [{ $ifNull: ['$refundedAmount', 0] }, row.amount] }] }, 2] } } }], { updatePipeline: true })
+              .exec();
+            await this.refunds
+              .updateOne({ _id: row._id, status: 'pending' }, { $set: { status: 'failed', failureMessage: `Recovery: ${(error as Error).message}`.slice(0, 300) } })
+              .exec();
+            this.logger.error(`Refund ${row._id.toString()} could not be completed by the recovery sweep: ${(error as Error).message}`);
+            continue;
+          }
+          await this.settleRefund(row, booking, provider, row.reason, actor);
+          resolved += 1;
+          this.logger.warn(`Recovered refund ${row._id.toString()} for ${row.bookingReference}: it had stayed pending`);
+        } catch (error) {
+          this.logger.error(`Recovering refund ${row._id.toString()} failed: ${(error as Error).message}`);
+        }
+      }
+    } catch (error) {
+      this.logger.warn(`Refund recovery failed: ${(error as Error).message}`);
+    }
+    return resolved;
   }
 
   async resend(id: string, actor: Actor) {

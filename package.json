@@ -32,7 +32,8 @@
     "seed:cms": "tsx scripts/seed-cms.ts",
     "seed:activity-details": "tsx scripts/seed-activity-details.ts",
     "backfill:vouchers": "tsx scripts/backfill-vouchers.ts",
-    "leads:backfill": "tsx scripts/backfill-leads.ts"
+    "leads:backfill": "tsx scripts/backfill-leads.ts",
+    "indexes:verify": "tsx scripts/verify-indexes.ts"
   },
   "dependencies": {
     "@clerk/backend": "3.22.0",
@@ -48,6 +49,7 @@
     "class-validator": "0.15.1",
     "compression": "1.8.2",
     "helmet": "8.3.0",
+    "ioredis": "^5.11.1",
     "mongoose": "9.10.2",
     "multer": "2.4.0",
     "pdfkit": "0.20.2",

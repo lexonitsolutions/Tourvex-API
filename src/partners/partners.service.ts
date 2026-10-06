@@ -1,3 +1,4 @@
+import { CacheService } from '../common/cache/cache.service';
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
@@ -23,6 +24,7 @@ export class PartnersService {
 
   constructor(
     @InjectModel(Partner.name) private readonly partners: Model<Partner>,
+    private readonly cache: CacheService,
     config: ConfigService,
   ) {
     this.showSamples = shouldExposeSamples(
@@ -31,7 +33,11 @@ export class PartnersService {
     );
   }
 
-  async list(query: ListPartnersDto) {
+  list(query: ListPartnersDto) {
+    return this.cache.wrap('partners', `list:${JSON.stringify(query)}`, 60, () => this.listUncached(query));
+  }
+
+  private async listUncached(query: ListPartnersDto) {
     const docs = await this.partners
       .find(buildPartnerFilter(query.placement, this.showSamples))
       .sort({ order: 1, name: 1 })
@@ -63,6 +69,12 @@ export class PartnersService {
   }
 
   async create(dto: CreatePartnerDto) {
+    const result = await this.createUncached(dto);
+    await this.cache.invalidate('partners');
+    return result;
+  }
+
+  private async createUncached(dto: CreatePartnerDto) {
     try {
       const created = await this.partners.create({ ...dto });
       return this.toAdmin(created.toObject());
@@ -72,6 +84,12 @@ export class PartnersService {
   }
 
   async update(id: string, dto: UpdatePartnerDto) {
+    const result = await this.updateUncached(id, dto);
+    await this.cache.invalidate('partners');
+    return result;
+  }
+
+  private async updateUncached(id: string, dto: UpdatePartnerDto) {
     try {
       const updated = await this.partners
         .findByIdAndUpdate(id, { $set: { ...dto } }, { new: true, runValidators: true })
@@ -85,6 +103,12 @@ export class PartnersService {
   }
 
   async remove(id: string) {
+    const result = await this.removeUncached(id);
+    await this.cache.invalidate('partners');
+    return result;
+  }
+
+  private async removeUncached(id: string) {
     const deleted = await this.partners.findByIdAndDelete(id).select({ _id: 1 }).lean().exec();
     if (!deleted) throw new NotFoundException('Partner not found');
     return { id, deleted: true };

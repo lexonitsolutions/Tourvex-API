@@ -33,6 +33,16 @@ class EnvironmentVariables {
   @IsNotEmpty()
   MONGODB_URI!: string;
 
+  /** Redis for the shared public-data cache. Optional: without it (or when unreachable) an in-memory cache is used. */
+  @IsOptional()
+  @IsString()
+  REDIS_URL?: string;
+
+  /** `false` turns the read cache off. Defaults to on, except when NODE_ENV=test. */
+  @IsOptional()
+  @IsBooleanString()
+  CACHE_ENABLED?: string;
+
   /** Clerk Backend API secret key. Required in production; without it protected routes answer 401. */
   @ValidateIf((env: EnvironmentVariables) => env.NODE_ENV === 'production')
   @IsString()

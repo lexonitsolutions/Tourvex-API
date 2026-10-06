@@ -62,6 +62,17 @@ export class Refund {
   @Prop({ type: String })
   creditNoteNumber?: string;
 
+  /** Idempotency key sent to the payment provider: lets a stuck refund be retried without ever refunding twice. */
+  @Prop({ type: String })
+  providerKey?: string;
+
+  /** What the booking had refunded before / after this refund was reserved (minor units), for crash recovery. */
+  @Prop({ type: Number })
+  refundedBeforeMinor?: number;
+
+  @Prop({ type: Number })
+  refundedAfterMinor?: number;
+
   @Prop({ type: Types.ObjectId, ref: 'User', required: true })
   actorId: Types.ObjectId;
 
@@ -74,6 +85,8 @@ export class Refund {
 
 export const RefundSchema = SchemaFactory.createForClass(Refund);
 RefundSchema.index({ createdAt: -1 });
+// The recovery sweep looks for refunds that stayed pending.
+RefundSchema.index({ status: 1, createdAt: 1 });
 RefundSchema.index(
   { idempotencyKey: 1 },
   { unique: true, partialFilterExpression: { idempotencyKey: { $type: 'string' } } },

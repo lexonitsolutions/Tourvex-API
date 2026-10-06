@@ -1,3 +1,4 @@
+import { CacheService } from '../common/cache/cache.service';
 import {
   BadRequestException,
   ConflictException,
@@ -83,6 +84,7 @@ export class CruisesService {
     @InjectModel(CruiseBanner.name) private readonly banners: Model<CruiseBanner>,
     @InjectModel(CruiseEnquiry.name) private readonly enquiries: Model<CruiseEnquiry>,
     private readonly leads: LeadsService,
+    private readonly cache: CacheService,
     config: ConfigService,
   ) {
     const nodeEnv = config.get<string>('NODE_ENV');
@@ -99,7 +101,11 @@ export class CruisesService {
     return { ...this.visible, departures: { $gte: startOfTodayUtc(now) } };
   }
 
-  async home() {
+  home() {
+    return this.cache.wrap('cruises', 'home', 60, () => this.homeUncached());
+  }
+
+  private async homeUncached() {
     const now = new Date();
     const match = this.upcomingVisible(now);
     const [banners, cities, countries, lines] = await Promise.all([
@@ -208,7 +214,12 @@ export class CruisesService {
     };
   }
 
-  async list(query: ListCruisesDto, admin = false) {
+  list(query: ListCruisesDto, admin = false) {
+    if (admin) return this.listUncached(query, admin);
+    return this.cache.wrap('cruises', `list:${JSON.stringify(query)}`, 60, () => this.listUncached(query, admin));
+  }
+
+  private async listUncached(query: ListCruisesDto, admin = false) {
     const now = new Date();
     const base = admin ? {} : this.visible;
     const filter = buildCruiseFilter(query, base, now, !admin);
@@ -241,7 +252,11 @@ export class CruisesService {
     };
   }
 
-  async findBySlug(slug: string, currency = CURRENCY) {
+  findBySlug(slug: string, currency = CURRENCY) {
+    return this.cache.wrap('cruises', `slug:${slug}:${currency}`, 60, () => this.findBySlugUncached(slug, currency));
+  }
+
+  private async findBySlugUncached(slug: string, currency = CURRENCY) {
     const now = new Date();
     const doc = await this.cruises
       .findOne({ slug, ...this.visible })
@@ -271,6 +286,12 @@ export class CruisesService {
   }
 
   async create(dto: CreateCruiseDto) {
+    const result = await this.createUncached(dto);
+    await this.cache.invalidate('cruises');
+    return result;
+  }
+
+  private async createUncached(dto: CreateCruiseDto) {
     const slug = dto.slug ?? slugify(dto.title);
     if (!slug) throw new BadRequestException('Could not derive a slug from the title; provide one');
     const durationDays = resolveDurationDays(dto.durationNights, dto.durationDays);
@@ -289,6 +310,12 @@ export class CruisesService {
   }
 
   async update(id: string, dto: UpdateCruiseDto) {
+    const result = await this.updateUncached(id, dto);
+    await this.cache.invalidate('cruises');
+    return result;
+  }
+
+  private async updateUncached(id: string, dto: UpdateCruiseDto) {
     const existing = await this.cruises
       .findById(id)
       .select({ durationNights: 1, durationDays: 1, itinerary: 1 })
@@ -318,6 +345,12 @@ export class CruisesService {
   }
 
   async remove(id: string) {
+    const result = await this.removeUncached(id);
+    await this.cache.invalidate('cruises');
+    return result;
+  }
+
+  private async removeUncached(id: string) {
     const deleted = await this.cruises.findByIdAndDelete(id).select({ _id: 1 }).lean().exec();
     if (!deleted) throw new NotFoundException('Cruise not found');
     return { id, deleted: true };

@@ -1,3 +1,4 @@
+import { CacheService } from '../common/cache/cache.service';
 import {
   BadRequestException,
   ConflictException,
@@ -81,6 +82,7 @@ export class EventsService {
     @InjectModel(EventBanner.name) private readonly banners: Model<EventBanner>,
     @InjectModel(EventEnquiry.name) private readonly enquiries: Model<EventEnquiry>,
     private readonly leads: LeadsService,
+    private readonly cache: CacheService,
     config: ConfigService,
   ) {
     const nodeEnv = config.get<string>('NODE_ENV');
@@ -97,7 +99,11 @@ export class EventsService {
     return { ...this.visible, 'sessions.startsAt': { $gte: startOfTodayUtc(now) } };
   }
 
-  async home() {
+  home() {
+    return this.cache.wrap('events', 'home', 60, () => this.homeUncached());
+  }
+
+  private async homeUncached() {
     const now = new Date();
     const match = this.upcomingVisible(now);
     const [banners, categories, cities, soon] = await Promise.all([
@@ -226,7 +232,12 @@ export class EventsService {
       .exec();
   }
 
-  async list(query: ListEventsDto, admin = false) {
+  list(query: ListEventsDto, admin = false) {
+    if (admin) return this.listUncached(query, admin);
+    return this.cache.wrap('events', `list:${JSON.stringify(query)}`, 60, () => this.listUncached(query, admin));
+  }
+
+  private async listUncached(query: ListEventsDto, admin = false) {
     const now = new Date();
     const base = admin ? {} : this.visible;
     const filter = buildEventFilter(query, base, now, !admin);
@@ -264,7 +275,11 @@ export class EventsService {
     };
   }
 
-  async findBySlug(slug: string, currency = CURRENCY) {
+  findBySlug(slug: string, currency = CURRENCY) {
+    return this.cache.wrap('events', `slug:${slug}:${currency}`, 60, () => this.findBySlugUncached(slug, currency));
+  }
+
+  private async findBySlugUncached(slug: string, currency = CURRENCY) {
     const now = new Date();
     const doc = await this.events
       .findOne({ slug, ...this.visible })
@@ -294,6 +309,12 @@ export class EventsService {
   }
 
   async create(dto: CreateEventDto) {
+    const result = await this.createUncached(dto);
+    await this.cache.invalidate('events');
+    return result;
+  }
+
+  private async createUncached(dto: CreateEventDto) {
     const slug = dto.slug ?? slugify(dto.title);
     if (!slug) throw new BadRequestException('Could not derive a slug from the title; provide one');
     this.assertSessions(dto.sessions);
@@ -310,6 +331,12 @@ export class EventsService {
   }
 
   async update(id: string, dto: UpdateEventDto) {
+    const result = await this.updateUncached(id, dto);
+    await this.cache.invalidate('events');
+    return result;
+  }
+
+  private async updateUncached(id: string, dto: UpdateEventDto) {
     this.assertSessions(dto.sessions);
     const changes: Record<string, unknown> = { ...dto };
     if (dto.sessions !== undefined) changes.sessions = normalizeSessions(dto.sessions);
@@ -326,6 +353,12 @@ export class EventsService {
   }
 
   async remove(id: string) {
+    const result = await this.removeUncached(id);
+    await this.cache.invalidate('events');
+    return result;
+  }
+
+  private async removeUncached(id: string) {
     const deleted = await this.events.findByIdAndDelete(id).select({ _id: 1 }).lean().exec();
     if (!deleted) throw new NotFoundException('Event not found');
     return { id, deleted: true };

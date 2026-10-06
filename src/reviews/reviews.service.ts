@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Booking } from '../bookings/schemas/booking.schema';
 import { Activity } from '../catalog/schemas/activity.schema';
+import { CacheService } from '../common/cache/cache.service';
 import { AuthenticatedUser } from '../common/decorators/current-user.decorator';
 import { appError } from '../common/app-error';
 import { UsersService } from '../users/users.service';
@@ -29,6 +30,7 @@ export class ReviewsService {
     @InjectModel(Booking.name) private readonly bookings: Model<Booking>,
     @InjectModel(Activity.name) private readonly activities: Model<Activity>,
     private readonly users: UsersService,
+    private readonly cache: CacheService,
   ) {}
 
   /** Computed from published reviews only; null when there are none. */
@@ -127,6 +129,7 @@ export class ReviewsService {
       .lean()
       .exec();
     if (!review) throw new NotFoundException('Review not found');
+    await this.cache.invalidate('catalog');
     return review;
   }
 

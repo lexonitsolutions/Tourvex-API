@@ -8,6 +8,7 @@ import { ActivityCapacityService } from './activity-capacity.service';
 import { CatalogController } from './catalog.controller';
 import { CatalogService } from './catalog.service';
 import { Activity, ActivitySchema } from './schemas/activity.schema';
+import { CapacityLock, CapacityLockSchema } from './schemas/capacity-lock.schema';
 
 @Module({
   imports: [
@@ -18,10 +19,11 @@ import { Activity, ActivitySchema } from './schemas/activity.schema';
       // Read-only here: used to count capacity taken by bookings and cart holds.
       { name: Booking.name, schema: BookingSchema },
       { name: CartSession.name, schema: CartSessionSchema },
+      { name: CapacityLock.name, schema: CapacityLockSchema },
     ]),
   ],
   controllers: [CatalogController],
   providers: [CatalogService, ActivityCapacityService],
-  exports: [CatalogService],
+  exports: [CatalogService, ActivityCapacityService],
 })
 export class CatalogModule {}

@@ -1,3 +1,4 @@
+import { CacheService } from '../common/cache/cache.service';
 import {
   BadRequestException,
   ConflictException,
@@ -63,6 +64,7 @@ export class VisasService {
     @InjectModel(VisaBanner.name) private readonly banners: Model<VisaBanner>,
     @InjectModel(VisaEnquiry.name) private readonly enquiries: Model<VisaEnquiry>,
     private readonly leads: LeadsService,
+    private readonly cache: CacheService,
     config: ConfigService,
   ) {
     const nodeEnv = config.get<string>('NODE_ENV');
@@ -74,7 +76,11 @@ export class VisasService {
     return publicVisibilityFilter(this.showSamples);
   }
 
-  async home() {
+  home() {
+    return this.cache.wrap('visas', 'home', 60, () => this.homeUncached());
+  }
+
+  private async homeUncached() {
     const [banners, sections] = await Promise.all([
       this.banners
         .find({ published: true })
@@ -100,7 +106,12 @@ export class VisasService {
     };
   }
 
-  async list(query: ListVisasDto, admin = false) {
+  list(query: ListVisasDto, admin = false) {
+    if (admin) return this.listUncached(query, admin);
+    return this.cache.wrap('visas', `list:${JSON.stringify(query)}`, 60, () => this.listUncached(query, admin));
+  }
+
+  private async listUncached(query: ListVisasDto, admin = false) {
     const base = admin ? {} : this.visible;
     const filter = buildVisaFilter(query, base);
     const { addFields, sort, collation } = buildVisaSort(query.sort);
@@ -135,7 +146,11 @@ export class VisasService {
     };
   }
 
-  async findBySlug(slug: string, currency = CURRENCY) {
+  findBySlug(slug: string, currency = CURRENCY) {
+    return this.cache.wrap('visas', `slug:${slug}:${currency}`, 60, () => this.findBySlugUncached(slug, currency));
+  }
+
+  private async findBySlugUncached(slug: string, currency = CURRENCY) {
     const doc = await this.visas
       .findOne({ slug, ...this.visible })
       .lean<Lean>()
@@ -157,6 +172,12 @@ export class VisasService {
   }
 
   async create(dto: CreateVisaDto) {
+    const result = await this.createUncached(dto);
+    await this.cache.invalidate('visas');
+    return result;
+  }
+
+  private async createUncached(dto: CreateVisaDto) {
     const slug = dto.slug ?? slugify(dto.title);
     if (!slug) throw new BadRequestException('Could not derive a slug from the title; provide one');
     try {
@@ -168,6 +189,12 @@ export class VisasService {
   }
 
   async update(id: string, dto: UpdateVisaDto) {
+    const result = await this.updateUncached(id, dto);
+    await this.cache.invalidate('visas');
+    return result;
+  }
+
+  private async updateUncached(id: string, dto: UpdateVisaDto) {
     try {
       const updated = await this.visas
         .findByIdAndUpdate(id, { $set: { ...dto } }, { new: true, runValidators: true })
@@ -181,6 +208,12 @@ export class VisasService {
   }
 
   async remove(id: string) {
+    const result = await this.removeUncached(id);
+    await this.cache.invalidate('visas');
+    return result;
+  }
+
+  private async removeUncached(id: string) {
     const deleted = await this.visas.findByIdAndDelete(id).select({ _id: 1 }).lean().exec();
     if (!deleted) throw new NotFoundException('Visa not found');
     return { id, deleted: true };
