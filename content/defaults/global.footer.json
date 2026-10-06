@@ -1,0 +1,121 @@
+{
+  "data": {
+    "logo": {
+      "url": "/images/karnish-logo.png",
+      "alt": "Karnish Tourism"
+    },
+    "about": "Experiences, holidays and travel services across the UAE and beyond.",
+    "groups": [
+      {
+        "id": "group-1",
+        "title": "Explore",
+        "links": [
+          {
+            "id": "link-1",
+            "link": {
+              "label": "Activities",
+              "href": "/activities"
+            }
+          },
+          {
+            "id": "link-2",
+            "link": {
+              "label": "Holidays",
+              "href": "/holidays"
+            }
+          },
+          {
+            "id": "link-3",
+            "link": {
+              "label": "Destinations",
+              "href": "/destination"
+            }
+          },
+          {
+            "id": "link-4",
+            "link": {
+              "label": "Services",
+              "href": "/services"
+            }
+          }
+        ]
+      },
+      {
+        "id": "group-2",
+        "title": "Company",
+        "links": [
+          {
+            "id": "link-1",
+            "link": {
+              "label": "About us",
+              "href": "/about"
+            }
+          },
+          {
+            "id": "link-2",
+            "link": {
+              "label": "Our team",
+              "href": "/team"
+            }
+          },
+          {
+            "id": "link-3",
+            "link": {
+              "label": "Blog",
+              "href": "/blog"
+            }
+          },
+          {
+            "id": "link-4",
+            "link": {
+              "label": "Contact",
+              "href": "/contact"
+            }
+          },
+          {
+            "id": "link-5",
+            "link": {
+              "label": "Help and Support",
+              "href": "/support"
+            }
+          }
+        ]
+      },
+      {
+        "id": "group-3",
+        "title": "Account",
+        "links": [
+          {
+            "id": "link-1",
+            "link": {
+              "label": "Log in",
+              "href": "/sign-in"
+            }
+          },
+          {
+            "id": "link-2",
+            "link": {
+              "label": "Create account",
+              "href": "/sign-up"
+            }
+          },
+          {
+            "id": "link-3",
+            "link": {
+              "label": "Partner sign up",
+              "href": "/partners"
+            }
+          }
+        ]
+      }
+    ],
+    "contact": {
+      "phone": "",
+      "email": "",
+      "address": "",
+      "hours": ""
+    },
+    "socials": [],
+    "copyright": "© {year} Karnish Tourism LLC. All rights reserved."
+  }
+}

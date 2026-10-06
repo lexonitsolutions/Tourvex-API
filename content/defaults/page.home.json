@@ -1,0 +1,323 @@
+{
+  "sections": [
+    {
+      "id": "hero",
+      "type": "hero",
+      "enabled": true,
+      "data": {
+        "eyebrow": "Karnish Tourism",
+        "slidesAriaLabel": "Featured destinations",
+        "slideCounterLabel": "{index} of {total}",
+        "slides": [
+          {
+            "id": "slide-1",
+            "title": "Dubai",
+            "tagline": "Top experiences. Big savings.",
+            "sub": "Discover Dubai — where every experience begins.",
+            "cta": {
+              "label": "Book Now",
+              "href": "/activities?destination=Dubai"
+            },
+            "image": {
+              "url": "/images/destination-03.jpg",
+              "alt": ""
+            }
+          },
+          {
+            "id": "slide-2",
+            "title": "Abu Dhabi",
+            "tagline": "Culture, theme parks and desert calm.",
+            "sub": "From the Grand Mosque to Yas Island — all in one place.",
+            "cta": {
+              "label": "Book Now",
+              "href": "/activities?destination=Abu%20Dhabi"
+            },
+            "image": {
+              "url": "/images/destination-05.jpg",
+              "alt": ""
+            }
+          },
+          {
+            "id": "slide-3",
+            "title": "Ras Al Khaimah",
+            "tagline": "Adventure above the clouds.",
+            "sub": "Ziplines, safaris and mountain escapes.",
+            "cta": {
+              "label": "Book Now",
+              "href": "/activities?destination=Ras%20Al%20Khaimah"
+            },
+            "image": {
+              "url": "/images/destination-01.jpg",
+              "alt": ""
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "categoryTiles",
+      "type": "categoryTiles",
+      "enabled": true,
+      "data": {
+        "heading": "What are you looking for?",
+        "subheading": "Explore our full range of travel services.",
+        "arrowLabel": "Explore",
+        "tiles": [
+          {
+            "id": "tile-1",
+            "link": {
+              "label": "Activities & Experiences",
+              "href": "/activities"
+            },
+            "sub": "Tours, attractions & day trips",
+            "emoji": "🎯",
+            "gradientFrom": "#0d3d6e",
+            "gradientMid": "#1565c0",
+            "gradientTo": "#0288d1"
+          },
+          {
+            "id": "tile-2",
+            "link": {
+              "label": "Holiday Packages",
+              "href": "/holidays"
+            },
+            "sub": "Multi-day curated itineraries",
+            "emoji": "🏝️",
+            "gradientFrom": "#1b4332",
+            "gradientMid": "#2d6a4f",
+            "gradientTo": "#40916c"
+          },
+          {
+            "id": "tile-3",
+            "link": {
+              "label": "Visa Services",
+              "href": "/visas"
+            },
+            "sub": "Expert assistance & applications",
+            "emoji": "🛂",
+            "gradientFrom": "#3a0078",
+            "gradientMid": "#6a1b9a",
+            "gradientTo": "#9c27b0"
+          },
+          {
+            "id": "tile-4",
+            "link": {
+              "label": "Cruises",
+              "href": "/cruises"
+            },
+            "sub": "Ocean & river sailings",
+            "emoji": "🚢",
+            "gradientFrom": "#004d56",
+            "gradientMid": "#00838f",
+            "gradientTo": "#00acc1"
+          },
+          {
+            "id": "tile-5",
+            "link": {
+              "label": "Events & Shows",
+              "href": "/events"
+            },
+            "sub": "Concerts, experiences & more",
+            "emoji": "🎭",
+            "gradientFrom": "#7b0000",
+            "gradientMid": "#c62828",
+            "gradientTo": "#ef5350"
+          }
+        ]
+      }
+    },
+    {
+      "id": "bestCities",
+      "type": "bestCities",
+      "enabled": true,
+      "data": {
+        "heading": "Best Cities to Visit",
+        "viewAll": {
+          "label": "View all",
+          "href": "/destination"
+        },
+        "previousLabel": "Previous",
+        "nextLabel": "Next",
+        "cityTitle": "Things to do in {city}",
+        "cityCount": "{count} experiences"
+      }
+    },
+    {
+      "id": "bestSellers",
+      "type": "bestSellers",
+      "enabled": true,
+      "data": {
+        "heading": "Best-Selling Experiences",
+        "viewAll": {
+          "label": "View all activities",
+          "href": "/activities"
+        },
+        "errorMessage": "We could not load experiences right now. Please try again shortly.",
+        "fromLabel": "From",
+        "priceOnRequest": "Price on request",
+        "fallbackTag": "Experience",
+        "cardAriaLabel": "{title}, from {price}"
+      }
+    },
+    {
+      "id": "holidays",
+      "type": "holidays",
+      "enabled": true,
+      "data": {
+        "heading": "Featured Holiday Packages",
+        "subheading": "Multi-day itineraries, hand-picked for you.",
+        "viewAll": {
+          "label": "View all holidays",
+          "href": "/holidays"
+        },
+        "emptyMessage": "No holiday packages available right now."
+      }
+    },
+    {
+      "id": "cruises",
+      "type": "cruises",
+      "enabled": true,
+      "data": {
+        "heading": "Set Sail — Explore Cruises",
+        "subheading": "Ocean and river sailings from the region and beyond.",
+        "viewAll": {
+          "label": "View all cruises",
+          "href": "/cruises"
+        }
+      }
+    },
+    {
+      "id": "events",
+      "type": "events",
+      "enabled": true,
+      "data": {
+        "heading": "Upcoming Events",
+        "subheading": "Concerts, shows and experiences happening soon.",
+        "viewAll": {
+          "label": "View all events",
+          "href": "/events"
+        }
+      }
+    },
+    {
+      "id": "exploreByExperience",
+      "type": "exploreByExperience",
+      "enabled": true,
+      "data": {
+        "heading": "Explore by Experience Type",
+        "subheading": "Pick a style of trip and see what we offer.",
+        "viewAll": {
+          "label": "View all",
+          "href": "/activities"
+        },
+        "ctaLabel": "Explore Now",
+        "statsFallback": "Explore the collection",
+        "countOne": "{count} experience",
+        "countMany": "{count} experiences",
+        "fromSuffix": "• from {price}",
+        "cardAriaLabel": "Explore {category}. {stats}",
+        "cards": [
+          {
+            "id": "card-1",
+            "category": "Desert Safari Tours",
+            "icon": "desert",
+            "image": {
+              "url": "/images/destination-b.jpg",
+              "alt": ""
+            },
+            "theme": "28 72% 26%"
+          },
+          {
+            "id": "card-2",
+            "category": "Theme Parks",
+            "icon": "park",
+            "image": {
+              "url": "/images/04.jpg",
+              "alt": ""
+            },
+            "theme": "262 52% 30%"
+          },
+          {
+            "id": "card-3",
+            "category": "Dhow Cruise & Yacht",
+            "icon": "cruise",
+            "image": {
+              "url": "/images/destination-a.jpg",
+              "alt": ""
+            },
+            "theme": "208 68% 24%"
+          },
+          {
+            "id": "card-4",
+            "category": "Water Activities",
+            "icon": "water",
+            "image": {
+              "url": "/images/destination-c.jpg",
+              "alt": ""
+            },
+            "theme": "188 74% 22%"
+          },
+          {
+            "id": "card-5",
+            "category": "Adventure Tours",
+            "icon": "adventure",
+            "image": {
+              "url": "/images/destination-f.jpg",
+              "alt": ""
+            },
+            "theme": "150 48% 24%"
+          },
+          {
+            "id": "card-6",
+            "category": "City Tours",
+            "icon": "city",
+            "image": {
+              "url": "/images/destination-d.jpg",
+              "alt": ""
+            },
+            "theme": "345 52% 28%"
+          }
+        ]
+      }
+    },
+    {
+      "id": "partners",
+      "type": "partners",
+      "enabled": true,
+      "data": {
+        "title": "In Partnership with World-Class Attractions",
+        "subtitle": "Trusted attractions and experiences, handpicked for your trip."
+      }
+    },
+    {
+      "id": "why",
+      "type": "why",
+      "enabled": true,
+      "data": {
+        "heading": "Why book with Karnish",
+        "items": [
+          {
+            "id": "reason-1",
+            "title": "Best price, honestly",
+            "text": "Prices come straight from our system — what you see is what you pay."
+          },
+          {
+            "id": "reason-2",
+            "title": "Flexible cancellation",
+            "text": "Every booking shows its cancellation policy up front."
+          },
+          {
+            "id": "reason-3",
+            "title": "Secure payments",
+            "text": "Card details go to our payment provider, never through our servers."
+          },
+          {
+            "id": "reason-4",
+            "title": "Local support",
+            "text": "Real people to help before, during and after your trip."
+          }
+        ]
+      }
+    }
+  ]
+}

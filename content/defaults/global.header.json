@@ -1,0 +1,1948 @@
+{
+  "data": {
+    "logo": {
+      "url": "/images/karnish-logo.png",
+      "alt": "Karnish Tourism"
+    },
+    "logoAriaLabel": "Karnish Tourism home",
+    "dockAriaLabel": "Categories",
+    "tabs": [
+      {
+        "id": "tab-1",
+        "link": {
+          "label": "Activities",
+          "href": "/activities"
+        },
+        "icon": "activities",
+        "mega": true,
+        "match": "/activities",
+        "mobileTile": true
+      },
+      {
+        "id": "tab-2",
+        "link": {
+          "label": "Holidays",
+          "href": "/holidays"
+        },
+        "icon": "holidays",
+        "mega": true,
+        "match": "/holidays,/tours",
+        "mobileTile": true
+      },
+      {
+        "id": "tab-3",
+        "link": {
+          "label": "Visas",
+          "href": "/visas"
+        },
+        "icon": "visas",
+        "mega": false,
+        "match": "/visas",
+        "mobileTile": true
+      },
+      {
+        "id": "tab-4",
+        "link": {
+          "label": "Cruises",
+          "href": "/cruises"
+        },
+        "icon": "cruises",
+        "mega": false,
+        "match": "/cruises",
+        "mobileTile": true
+      },
+      {
+        "id": "tab-5",
+        "link": {
+          "label": "Yachts",
+          "href": "/activities?activity=Dhow%20Cruise%20%26%20Yacht"
+        },
+        "icon": "yachts",
+        "mega": false,
+        "match": "",
+        "mobileTile": false
+      },
+      {
+        "id": "tab-6",
+        "link": {
+          "label": "Events",
+          "href": "/events"
+        },
+        "icon": "events",
+        "mega": false,
+        "match": "/events",
+        "mobileTile": false
+      }
+    ],
+    "search": {
+      "markup": "Search for **Holidays**",
+      "sparkle": "✦",
+      "ariaLabel": "Search holidays, activities and destinations"
+    },
+    "help": {
+      "label": "Get Help",
+      "href": "/contact"
+    },
+    "labels": {
+      "localeLabel": "EN · {currency}",
+      "localeAriaLabel": "Language and currency: English, {currency}",
+      "accountAriaLabel": "Open my account"
+    },
+    "mobile": {
+      "tilesAriaLabel": "Browse categories",
+      "moreLabel": "More",
+      "sheetTitle": "More",
+      "closeLabel": "Close",
+      "localeRowLabel": "Language & Currency",
+      "moreLinks": [
+        {
+          "id": "more-1",
+          "link": {
+            "label": "Yachts",
+            "href": "/activities?activity=Dhow%20Cruise%20%26%20Yacht"
+          },
+          "icon": "yachts"
+        },
+        {
+          "id": "more-2",
+          "link": {
+            "label": "Events",
+            "href": "/events"
+          },
+          "icon": "events"
+        },
+        {
+          "id": "more-3",
+          "link": {
+            "label": "Destinations",
+            "href": "/destination"
+          },
+          "icon": "destinations"
+        },
+        {
+          "id": "more-4",
+          "link": {
+            "label": "Get Help",
+            "href": "/contact"
+          },
+          "icon": "help"
+        }
+      ],
+      "tabBarAriaLabel": "Primary",
+      "tabBarItems": [
+        {
+          "id": "bar-1",
+          "link": {
+            "label": "Home",
+            "href": "/"
+          },
+          "icon": "home"
+        },
+        {
+          "id": "bar-2",
+          "link": {
+            "label": "Bookings",
+            "href": "/bookings"
+          },
+          "icon": "bookings"
+        },
+        {
+          "id": "bar-3",
+          "link": {
+            "label": "Wishlist",
+            "href": "/wishlist"
+          },
+          "icon": "wishlist"
+        }
+      ],
+      "accountTabLabel": "Account",
+      "smartSearchLabel": "Smart search"
+    },
+    "megaMenu": {
+      "regionAriaLabel": "Destinations and Activities Menu",
+      "sidebarAriaLabel": "Explore Categories",
+      "groups": [
+        {
+          "id": "best-cities",
+          "icon": "🌍",
+          "label": "Best Cities to Visit",
+          "items": [
+            {
+              "id": "best-cities-item-1",
+              "link": {
+                "label": "Dubai",
+                "href": "/holidays/destination/Dubai?country=United%20Arab%20Emirates"
+              },
+              "sub": "United Arab Emirates",
+              "image": {
+                "url": "/images/destination-a.jpg",
+                "alt": "Dubai"
+              }
+            },
+            {
+              "id": "best-cities-item-2",
+              "link": {
+                "label": "Abu Dhabi",
+                "href": "/holidays/destination/Abu%20Dhabi?country=United%20Arab%20Emirates"
+              },
+              "sub": "United Arab Emirates",
+              "image": {
+                "url": "/images/destination-b.jpg",
+                "alt": "Abu Dhabi"
+              }
+            },
+            {
+              "id": "best-cities-item-3",
+              "link": {
+                "label": "Pattaya",
+                "href": "/activities?destination=Pattaya"
+              },
+              "sub": "Thailand",
+              "image": {
+                "url": "/images/destination-c.jpg",
+                "alt": "Pattaya"
+              }
+            },
+            {
+              "id": "best-cities-item-4",
+              "link": {
+                "label": "Kuala Lumpur",
+                "href": "/activities?destination=Kuala%20Lumpur"
+              },
+              "sub": "Malaysia",
+              "image": {
+                "url": "/images/destination-d.jpg",
+                "alt": "Kuala Lumpur"
+              }
+            },
+            {
+              "id": "best-cities-item-5",
+              "link": {
+                "label": "Ras al Khaimah",
+                "href": "/holidays/destination/Ras%20Al%20Khaimah?country=United%20Arab%20Emirates"
+              },
+              "sub": "United Arab Emirates",
+              "image": {
+                "url": "/images/destination-e.jpg",
+                "alt": "Ras al Khaimah"
+              }
+            },
+            {
+              "id": "best-cities-item-6",
+              "link": {
+                "label": "Al Ula",
+                "href": "/activities?destination=Al%20Ula"
+              },
+              "sub": "Saudi Arabia",
+              "image": {
+                "url": "/images/destination-f.jpg",
+                "alt": "Al Ula"
+              }
+            },
+            {
+              "id": "best-cities-item-7",
+              "link": {
+                "label": "Penang",
+                "href": "/activities?destination=Penang"
+              },
+              "sub": "Malaysia",
+              "image": {
+                "url": "/images/blog-1.jpg",
+                "alt": "Penang"
+              }
+            },
+            {
+              "id": "best-cities-item-8",
+              "link": {
+                "label": "Phu Quoc",
+                "href": "/activities?destination=Phu%20Quoc"
+              },
+              "sub": "Vietnam",
+              "image": {
+                "url": "/images/blog-2.jpg",
+                "alt": "Phu Quoc"
+              }
+            },
+            {
+              "id": "best-cities-item-9",
+              "link": {
+                "label": "Ho Chi Minh",
+                "href": "/activities?destination=Ho%20Chi%20Minh"
+              },
+              "sub": "Vietnam",
+              "image": {
+                "url": "/images/blog-3.jpg",
+                "alt": "Ho Chi Minh"
+              }
+            },
+            {
+              "id": "best-cities-item-10",
+              "link": {
+                "label": "Bali",
+                "href": "/activities?destination=Bali"
+              },
+              "sub": "Indonesia",
+              "image": {
+                "url": "/images/blog-4.jpg",
+                "alt": "Bali"
+              }
+            },
+            {
+              "id": "best-cities-item-11",
+              "link": {
+                "label": "Bangkok",
+                "href": "/activities?destination=Bangkok"
+              },
+              "sub": "Thailand",
+              "image": {
+                "url": "/images/blog-5.jpg",
+                "alt": "Bangkok"
+              }
+            },
+            {
+              "id": "best-cities-item-12",
+              "link": {
+                "label": "Krabi",
+                "href": "/activities?destination=Krabi"
+              },
+              "sub": "Thailand",
+              "image": {
+                "url": "/images/blog-6.jpg",
+                "alt": "Krabi"
+              }
+            },
+            {
+              "id": "best-cities-item-13",
+              "link": {
+                "label": "Langkawi",
+                "href": "/activities?destination=Langkawi"
+              },
+              "sub": "Malaysia",
+              "image": {
+                "url": "/images/blog-7.jpg",
+                "alt": "Langkawi"
+              }
+            },
+            {
+              "id": "best-cities-item-14",
+              "link": {
+                "label": "Dammam",
+                "href": "/activities?destination=Dammam"
+              },
+              "sub": "Saudi Arabia",
+              "image": {
+                "url": "/images/destination-01.jpg",
+                "alt": "Dammam"
+              }
+            },
+            {
+              "id": "best-cities-item-15",
+              "link": {
+                "label": "Cebu City",
+                "href": "/activities?destination=Cebu%20City"
+              },
+              "sub": "Philippines",
+              "image": {
+                "url": "/images/destination-02.jpg",
+                "alt": "Cebu City"
+              }
+            },
+            {
+              "id": "best-cities-item-16",
+              "link": {
+                "label": "Chiang Mai",
+                "href": "/activities?destination=Chiang%20Mai"
+              },
+              "sub": "Thailand",
+              "image": {
+                "url": "/images/destination-03.jpg",
+                "alt": "Chiang Mai"
+              }
+            },
+            {
+              "id": "best-cities-item-17",
+              "link": {
+                "label": "Danang",
+                "href": "/activities?destination=Danang"
+              },
+              "sub": "Vietnam",
+              "image": {
+                "url": "/images/destination-05.jpg",
+                "alt": "Danang"
+              }
+            },
+            {
+              "id": "best-cities-item-18",
+              "link": {
+                "label": "Singapore",
+                "href": "/activities?destination=Singapore"
+              },
+              "sub": "Singapore",
+              "image": {
+                "url": "/images/destination-a.jpg",
+                "alt": "Singapore"
+              }
+            },
+            {
+              "id": "best-cities-item-19",
+              "link": {
+                "label": "Phuket",
+                "href": "/activities?destination=Phuket"
+              },
+              "sub": "Thailand",
+              "image": {
+                "url": "/images/destination-b.jpg",
+                "alt": "Phuket"
+              }
+            },
+            {
+              "id": "best-cities-item-20",
+              "link": {
+                "label": "Koh Samui",
+                "href": "/activities?destination=Koh%20Samui"
+              },
+              "sub": "Thailand",
+              "image": {
+                "url": "/images/destination-c.jpg",
+                "alt": "Koh Samui"
+              }
+            },
+            {
+              "id": "best-cities-item-21",
+              "link": {
+                "label": "Jeddah",
+                "href": "/activities?destination=Jeddah"
+              },
+              "sub": "Saudi Arabia",
+              "image": {
+                "url": "/images/destination-d.jpg",
+                "alt": "Jeddah"
+              }
+            },
+            {
+              "id": "best-cities-item-22",
+              "link": {
+                "label": "Riyadh",
+                "href": "/activities?destination=Riyadh"
+              },
+              "sub": "Saudi Arabia",
+              "image": {
+                "url": "/images/destination-e.jpg",
+                "alt": "Riyadh"
+              }
+            },
+            {
+              "id": "best-cities-item-23",
+              "link": {
+                "label": "Manila",
+                "href": "/activities?destination=Manila"
+              },
+              "sub": "Philippines",
+              "image": {
+                "url": "/images/destination-f.jpg",
+                "alt": "Manila"
+              }
+            },
+            {
+              "id": "best-cities-item-24",
+              "link": {
+                "label": "Hanoi",
+                "href": "/activities?destination=Hanoi"
+              },
+              "sub": "Vietnam",
+              "image": {
+                "url": "/images/blog-1.jpg",
+                "alt": "Hanoi"
+              }
+            },
+            {
+              "id": "best-cities-item-25",
+              "link": {
+                "label": "Boracay",
+                "href": "/activities?destination=Boracay"
+              },
+              "sub": "Philippines",
+              "image": {
+                "url": "/images/blog-2.jpg",
+                "alt": "Boracay"
+              }
+            }
+          ]
+        },
+        {
+          "id": "dubai-activities",
+          "icon": "✨",
+          "label": "Best Activities in Dubai",
+          "items": [
+            {
+              "id": "dubai-activities-item-1",
+              "link": {
+                "label": "Burj Khalifa At The Top",
+                "href": "/activities?destination=Dubai"
+              },
+              "sub": "Dubai, UAE",
+              "image": {
+                "url": "/images/destination-a.jpg",
+                "alt": "Burj Khalifa At The Top"
+              }
+            },
+            {
+              "id": "dubai-activities-item-2",
+              "link": {
+                "label": "Desert Safari with BBQ",
+                "href": "/activities?destination=Dubai"
+              },
+              "sub": "Dubai, UAE",
+              "image": {
+                "url": "/images/destination-b.jpg",
+                "alt": "Desert Safari with BBQ"
+              }
+            },
+            {
+              "id": "dubai-activities-item-3",
+              "link": {
+                "label": "Dubai Marina Dhow Cruise",
+                "href": "/activities?destination=Dubai"
+              },
+              "sub": "Dubai, UAE",
+              "image": {
+                "url": "/images/destination-c.jpg",
+                "alt": "Dubai Marina Dhow Cruise"
+              }
+            },
+            {
+              "id": "dubai-activities-item-4",
+              "link": {
+                "label": "Dubai Frame Tickets",
+                "href": "/activities?destination=Dubai"
+              },
+              "sub": "Dubai, UAE",
+              "image": {
+                "url": "/images/destination-d.jpg",
+                "alt": "Dubai Frame Tickets"
+              }
+            },
+            {
+              "id": "dubai-activities-item-5",
+              "link": {
+                "label": "Aquaventure Waterpark",
+                "href": "/activities?destination=Dubai"
+              },
+              "sub": "Atlantis The Palm",
+              "image": {
+                "url": "/images/destination-e.jpg",
+                "alt": "Aquaventure Waterpark"
+              }
+            },
+            {
+              "id": "dubai-activities-item-6",
+              "link": {
+                "label": "Museum of the Future",
+                "href": "/activities?destination=Dubai"
+              },
+              "sub": "Sheikh Zayed Rd",
+              "image": {
+                "url": "/images/destination-f.jpg",
+                "alt": "Museum of the Future"
+              }
+            },
+            {
+              "id": "dubai-activities-item-7",
+              "link": {
+                "label": "Dubai Miracle Garden",
+                "href": "/activities?destination=Dubai"
+              },
+              "sub": "Dubailand",
+              "image": {
+                "url": "/images/blog-1.jpg",
+                "alt": "Dubai Miracle Garden"
+              }
+            },
+            {
+              "id": "dubai-activities-item-8",
+              "link": {
+                "label": "The View at The Palm",
+                "href": "/activities?destination=Dubai"
+              },
+              "sub": "Palm Tower",
+              "image": {
+                "url": "/images/blog-2.jpg",
+                "alt": "The View at The Palm"
+              }
+            },
+            {
+              "id": "dubai-activities-item-9",
+              "link": {
+                "label": "Skydive Dubai",
+                "href": "/activities?destination=Dubai"
+              },
+              "sub": "Palm Dropzone",
+              "image": {
+                "url": "/images/blog-3.jpg",
+                "alt": "Skydive Dubai"
+              }
+            },
+            {
+              "id": "dubai-activities-item-10",
+              "link": {
+                "label": "Dubai Aquarium & Zoo",
+                "href": "/activities?destination=Dubai"
+              },
+              "sub": "Dubai Mall",
+              "image": {
+                "url": "/images/blog-4.jpg",
+                "alt": "Dubai Aquarium & Zoo"
+              }
+            },
+            {
+              "id": "dubai-activities-item-11",
+              "link": {
+                "label": "Ain Dubai Wheel",
+                "href": "/activities?destination=Dubai"
+              },
+              "sub": "Bluewaters",
+              "image": {
+                "url": "/images/blog-5.jpg",
+                "alt": "Ain Dubai Wheel"
+              }
+            },
+            {
+              "id": "dubai-activities-item-12",
+              "link": {
+                "label": "Global Village Dubai",
+                "href": "/activities?destination=Dubai"
+              },
+              "sub": "Dubailand",
+              "image": {
+                "url": "/images/blog-6.jpg",
+                "alt": "Global Village Dubai"
+              }
+            },
+            {
+              "id": "dubai-activities-item-13",
+              "link": {
+                "label": "Green Planet Dubai",
+                "href": "/activities?destination=Dubai"
+              },
+              "sub": "City Walk",
+              "image": {
+                "url": "/images/blog-7.jpg",
+                "alt": "Green Planet Dubai"
+              }
+            },
+            {
+              "id": "dubai-activities-item-14",
+              "link": {
+                "label": "Dubai Dolphinarium",
+                "href": "/activities?destination=Dubai"
+              },
+              "sub": "Creek Park",
+              "image": {
+                "url": "/images/destination-01.jpg",
+                "alt": "Dubai Dolphinarium"
+              }
+            },
+            {
+              "id": "dubai-activities-item-15",
+              "link": {
+                "label": "Helicopter City Tour",
+                "href": "/activities?destination=Dubai"
+              },
+              "sub": "Atlantis Helipad",
+              "image": {
+                "url": "/images/destination-02.jpg",
+                "alt": "Helicopter City Tour"
+              }
+            },
+            {
+              "id": "dubai-activities-item-16",
+              "link": {
+                "label": "Yellow Boats Sightseeing",
+                "href": "/activities?destination=Dubai"
+              },
+              "sub": "Dubai Marina",
+              "image": {
+                "url": "/images/destination-03.jpg",
+                "alt": "Yellow Boats Sightseeing"
+              }
+            },
+            {
+              "id": "dubai-activities-item-17",
+              "link": {
+                "label": "Jet Ski Tour Dubai",
+                "href": "/activities?destination=Dubai"
+              },
+              "sub": "Marina Waters",
+              "image": {
+                "url": "/images/destination-05.jpg",
+                "alt": "Jet Ski Tour Dubai"
+              }
+            },
+            {
+              "id": "dubai-activities-item-18",
+              "link": {
+                "label": "IMG Worlds of Adventure",
+                "href": "/activities?destination=Dubai"
+              },
+              "sub": "Indoor Theme Park",
+              "image": {
+                "url": "/images/01.jpg",
+                "alt": "IMG Worlds of Adventure"
+              }
+            }
+          ]
+        },
+        {
+          "id": "abu-dhabi-activities",
+          "icon": "🏎️",
+          "label": "Best Activities in Abu Dhabi",
+          "items": [
+            {
+              "id": "abu-dhabi-activities-item-1",
+              "link": {
+                "label": "Ferrari World Theme Park",
+                "href": "/activities?destination=Abu%20Dhabi"
+              },
+              "sub": "Yas Island",
+              "image": {
+                "url": "/images/destination-b.jpg",
+                "alt": "Ferrari World Theme Park"
+              }
+            },
+            {
+              "id": "abu-dhabi-activities-item-2",
+              "link": {
+                "label": "Warner Bros. World",
+                "href": "/activities?destination=Abu%20Dhabi"
+              },
+              "sub": "Yas Island",
+              "image": {
+                "url": "/images/destination-c.jpg",
+                "alt": "Warner Bros. World"
+              }
+            },
+            {
+              "id": "abu-dhabi-activities-item-3",
+              "link": {
+                "label": "Louvre Abu Dhabi",
+                "href": "/activities?destination=Abu%20Dhabi"
+              },
+              "sub": "Saadiyat Island",
+              "image": {
+                "url": "/images/destination-d.jpg",
+                "alt": "Louvre Abu Dhabi"
+              }
+            },
+            {
+              "id": "abu-dhabi-activities-item-4",
+              "link": {
+                "label": "Sheikh Zayed Grand Mosque",
+                "href": "/activities?destination=Abu%20Dhabi"
+              },
+              "sub": "Guided Tour",
+              "image": {
+                "url": "/images/destination-e.jpg",
+                "alt": "Sheikh Zayed Grand Mosque"
+              }
+            },
+            {
+              "id": "abu-dhabi-activities-item-5",
+              "link": {
+                "label": "Yas Waterworld",
+                "href": "/activities?destination=Abu%20Dhabi"
+              },
+              "sub": "Yas Island",
+              "image": {
+                "url": "/images/destination-f.jpg",
+                "alt": "Yas Waterworld"
+              }
+            },
+            {
+              "id": "abu-dhabi-activities-item-6",
+              "link": {
+                "label": "SeaWorld Abu Dhabi",
+                "href": "/activities?destination=Abu%20Dhabi"
+              },
+              "sub": "Yas Island",
+              "image": {
+                "url": "/images/blog-1.jpg",
+                "alt": "SeaWorld Abu Dhabi"
+              }
+            },
+            {
+              "id": "abu-dhabi-activities-item-7",
+              "link": {
+                "label": "Qasr Al Watan Palace",
+                "href": "/activities?destination=Abu%20Dhabi"
+              },
+              "sub": "Corniche",
+              "image": {
+                "url": "/images/blog-2.jpg",
+                "alt": "Qasr Al Watan Palace"
+              }
+            },
+            {
+              "id": "abu-dhabi-activities-item-8",
+              "link": {
+                "label": "CLYMB Abu Dhabi",
+                "href": "/activities?destination=Abu%20Dhabi"
+              },
+              "sub": "Indoor Skydiving",
+              "image": {
+                "url": "/images/blog-3.jpg",
+                "alt": "CLYMB Abu Dhabi"
+              }
+            },
+            {
+              "id": "abu-dhabi-activities-item-9",
+              "link": {
+                "label": "Abu Dhabi Full Day Tour",
+                "href": "/activities?destination=Abu%20Dhabi"
+              },
+              "sub": "City Sightseeing",
+              "image": {
+                "url": "/images/blog-4.jpg",
+                "alt": "Abu Dhabi Full Day Tour"
+              }
+            },
+            {
+              "id": "abu-dhabi-activities-item-10",
+              "link": {
+                "label": "Mangrove Kayak Tour",
+                "href": "/activities?destination=Abu%20Dhabi"
+              },
+              "sub": "National Park",
+              "image": {
+                "url": "/images/blog-5.jpg",
+                "alt": "Mangrove Kayak Tour"
+              }
+            },
+            {
+              "id": "abu-dhabi-activities-item-11",
+              "link": {
+                "label": "Falcon Hospital Tour",
+                "href": "/activities?destination=Abu%20Dhabi"
+              },
+              "sub": "Heritage Tour",
+              "image": {
+                "url": "/images/blog-6.jpg",
+                "alt": "Falcon Hospital Tour"
+              }
+            },
+            {
+              "id": "abu-dhabi-activities-item-12",
+              "link": {
+                "label": "Emirates Park Zoo",
+                "href": "/activities?destination=Abu%20Dhabi"
+              },
+              "sub": "Wildlife Park",
+              "image": {
+                "url": "/images/blog-7.jpg",
+                "alt": "Emirates Park Zoo"
+              }
+            }
+          ]
+        },
+        {
+          "id": "rak-activities",
+          "icon": "⛰️",
+          "label": "Best Activities in Ras al Khaimah",
+          "items": [
+            {
+              "id": "rak-activities-item-1",
+              "link": {
+                "label": "Jebel Jais Flight Zipline",
+                "href": "/activities?destination=Ras%20Al%20Khaimah"
+              },
+              "sub": "World's Longest",
+              "image": {
+                "url": "/images/destination-e.jpg",
+                "alt": "Jebel Jais Flight Zipline"
+              }
+            },
+            {
+              "id": "rak-activities-item-2",
+              "link": {
+                "label": "Jais Sledder Ride",
+                "href": "/activities?destination=Ras%20Al%20Khaimah"
+              },
+              "sub": "Mountain Toboggan",
+              "image": {
+                "url": "/images/destination-f.jpg",
+                "alt": "Jais Sledder Ride"
+              }
+            },
+            {
+              "id": "rak-activities-item-3",
+              "link": {
+                "label": "Suwaidi Pearl Farm",
+                "href": "/activities?destination=Ras%20Al%20Khaimah"
+              },
+              "sub": "Al Rams Heritage",
+              "image": {
+                "url": "/images/blog-1.jpg",
+                "alt": "Suwaidi Pearl Farm"
+              }
+            },
+            {
+              "id": "rak-activities-item-4",
+              "link": {
+                "label": "RAK Desert Safari",
+                "href": "/activities?destination=Ras%20Al%20Khaimah"
+              },
+              "sub": "Bassata Village",
+              "image": {
+                "url": "/images/blog-2.jpg",
+                "alt": "RAK Desert Safari"
+              }
+            },
+            {
+              "id": "rak-activities-item-5",
+              "link": {
+                "label": "1484 by Puro Dining",
+                "href": "/activities?destination=Ras%20Al%20Khaimah"
+              },
+              "sub": "Jebel Jais Peak",
+              "image": {
+                "url": "/images/blog-3.jpg",
+                "alt": "1484 by Puro Dining"
+              }
+            },
+            {
+              "id": "rak-activities-item-6",
+              "link": {
+                "label": "Dune Buggy RAK Adventure",
+                "href": "/activities?destination=Ras%20Al%20Khaimah"
+              },
+              "sub": "Red Dunes",
+              "image": {
+                "url": "/images/blog-4.jpg",
+                "alt": "Dune Buggy RAK Adventure"
+              }
+            },
+            {
+              "id": "rak-activities-item-7",
+              "link": {
+                "label": "Al Wadi Nature Reserve",
+                "href": "/activities?destination=Ras%20Al%20Khaimah"
+              },
+              "sub": "Wildlife Safari",
+              "image": {
+                "url": "/images/blog-5.jpg",
+                "alt": "Al Wadi Nature Reserve"
+              }
+            },
+            {
+              "id": "rak-activities-item-8",
+              "link": {
+                "label": "Dhayah Fort Tour",
+                "href": "/activities?destination=Ras%20Al%20Khaimah"
+              },
+              "sub": "Historic Hilltop",
+              "image": {
+                "url": "/images/blog-6.jpg",
+                "alt": "Dhayah Fort Tour"
+              }
+            },
+            {
+              "id": "rak-activities-item-9",
+              "link": {
+                "label": "Al Hamra Marina Cruise",
+                "href": "/activities?destination=Ras%20Al%20Khaimah"
+              },
+              "sub": "Sunset Sailing",
+              "image": {
+                "url": "/images/blog-7.jpg",
+                "alt": "Al Hamra Marina Cruise"
+              }
+            }
+          ]
+        },
+        {
+          "id": "singapore-activities",
+          "icon": "🦁",
+          "label": "Best Activities in Singapore",
+          "items": [
+            {
+              "id": "singapore-activities-item-1",
+              "link": {
+                "label": "Universal Studios Singapore",
+                "href": "/activities?destination=Singapore"
+              },
+              "sub": "Sentosa Island",
+              "image": {
+                "url": "/images/destination-c.jpg",
+                "alt": "Universal Studios Singapore"
+              }
+            },
+            {
+              "id": "singapore-activities-item-2",
+              "link": {
+                "label": "Gardens by the Bay",
+                "href": "/activities?destination=Singapore"
+              },
+              "sub": "Flower Dome",
+              "image": {
+                "url": "/images/destination-a.jpg",
+                "alt": "Gardens by the Bay"
+              }
+            },
+            {
+              "id": "singapore-activities-item-3",
+              "link": {
+                "label": "Marina Bay Sands SkyPark",
+                "href": "/activities?destination=Singapore"
+              },
+              "sub": "Observation Deck",
+              "image": {
+                "url": "/images/destination-b.jpg",
+                "alt": "Marina Bay Sands SkyPark"
+              }
+            },
+            {
+              "id": "singapore-activities-item-4",
+              "link": {
+                "label": "Singapore Night Safari",
+                "href": "/activities?destination=Singapore"
+              },
+              "sub": "Wildlife Reserve",
+              "image": {
+                "url": "/images/destination-d.jpg",
+                "alt": "Singapore Night Safari"
+              }
+            },
+            {
+              "id": "singapore-activities-item-5",
+              "link": {
+                "label": "Singapore Flyer",
+                "href": "/activities?destination=Singapore"
+              },
+              "sub": "Giant Wheel",
+              "image": {
+                "url": "/images/destination-e.jpg",
+                "alt": "Singapore Flyer"
+              }
+            },
+            {
+              "id": "singapore-activities-item-6",
+              "link": {
+                "label": "Sentosa Cable Car Sky Pass",
+                "href": "/activities?destination=Singapore"
+              },
+              "sub": "Mount Faber Line",
+              "image": {
+                "url": "/images/destination-f.jpg",
+                "alt": "Sentosa Cable Car Sky Pass"
+              }
+            },
+            {
+              "id": "singapore-activities-item-7",
+              "link": {
+                "label": "S.E.A. Aquarium Sentosa",
+                "href": "/activities?destination=Singapore"
+              },
+              "sub": "Ocean Realm",
+              "image": {
+                "url": "/images/blog-1.jpg",
+                "alt": "S.E.A. Aquarium Sentosa"
+              }
+            },
+            {
+              "id": "singapore-activities-item-8",
+              "link": {
+                "label": "River Wonders & Pandas",
+                "href": "/activities?destination=Singapore"
+              },
+              "sub": "Mandai Park",
+              "image": {
+                "url": "/images/blog-2.jpg",
+                "alt": "River Wonders & Pandas"
+              }
+            },
+            {
+              "id": "singapore-activities-item-9",
+              "link": {
+                "label": "Jewel Changi Canopy Park",
+                "href": "/activities?destination=Singapore"
+              },
+              "sub": "Rain Vortex",
+              "image": {
+                "url": "/images/blog-3.jpg",
+                "alt": "Jewel Changi Canopy Park"
+              }
+            }
+          ]
+        },
+        {
+          "id": "thailand-activities",
+          "icon": "🐘",
+          "label": "Best Activities in Thailand",
+          "items": [
+            {
+              "id": "thailand-activities-item-1",
+              "link": {
+                "label": "Phuket Phi Phi Speedboat",
+                "href": "/activities?destination=Phuket"
+              },
+              "sub": "Maya Bay & Lagoon",
+              "image": {
+                "url": "/images/destination-b.jpg",
+                "alt": "Phuket Phi Phi Speedboat"
+              }
+            },
+            {
+              "id": "thailand-activities-item-2",
+              "link": {
+                "label": "Bangkok Grand Palace",
+                "href": "/activities?destination=Bangkok"
+              },
+              "sub": "Emerald Buddha",
+              "image": {
+                "url": "/images/destination-c.jpg",
+                "alt": "Bangkok Grand Palace"
+              }
+            },
+            {
+              "id": "thailand-activities-item-3",
+              "link": {
+                "label": "Chiang Mai Elephant Park",
+                "href": "/activities?destination=Chiang%20Mai"
+              },
+              "sub": "Ethical Sanctuary",
+              "image": {
+                "url": "/images/destination-d.jpg",
+                "alt": "Chiang Mai Elephant Park"
+              }
+            },
+            {
+              "id": "thailand-activities-item-4",
+              "link": {
+                "label": "Pattaya Coral Island Tour",
+                "href": "/activities?destination=Pattaya"
+              },
+              "sub": "Parasailing & Beach",
+              "image": {
+                "url": "/images/destination-e.jpg",
+                "alt": "Pattaya Coral Island Tour"
+              }
+            },
+            {
+              "id": "thailand-activities-item-5",
+              "link": {
+                "label": "Chao Phraya Dinner Cruise",
+                "href": "/activities?destination=Bangkok"
+              },
+              "sub": "Bangkok Riverfront",
+              "image": {
+                "url": "/images/destination-f.jpg",
+                "alt": "Chao Phraya Dinner Cruise"
+              }
+            },
+            {
+              "id": "thailand-activities-item-6",
+              "link": {
+                "label": "Damnoen Saduak Market",
+                "href": "/activities?destination=Bangkok"
+              },
+              "sub": "Floating Boats",
+              "image": {
+                "url": "/images/blog-1.jpg",
+                "alt": "Damnoen Saduak Market"
+              }
+            },
+            {
+              "id": "thailand-activities-item-7",
+              "link": {
+                "label": "James Bond Island Tour",
+                "href": "/activities?destination=Phuket"
+              },
+              "sub": "Phang Nga Bay",
+              "image": {
+                "url": "/images/blog-2.jpg",
+                "alt": "James Bond Island Tour"
+              }
+            },
+            {
+              "id": "thailand-activities-item-8",
+              "link": {
+                "label": "Sanctuary of Truth",
+                "href": "/activities?destination=Pattaya"
+              },
+              "sub": "Wooden Temple",
+              "image": {
+                "url": "/images/blog-3.jpg",
+                "alt": "Sanctuary of Truth"
+              }
+            },
+            {
+              "id": "thailand-activities-item-9",
+              "link": {
+                "label": "Koh Samui Jungle Safari",
+                "href": "/activities?destination=Koh%20Samui"
+              },
+              "sub": "4x4 Waterfall Tour",
+              "image": {
+                "url": "/images/blog-4.jpg",
+                "alt": "Koh Samui Jungle Safari"
+              }
+            }
+          ]
+        },
+        {
+          "id": "saudi-activities",
+          "icon": "🏜️",
+          "label": "Best Activities in Saudi Arabia",
+          "items": [
+            {
+              "id": "saudi-activities-item-1",
+              "link": {
+                "label": "Al Ula Hegra UNESCO Tour",
+                "href": "/activities?destination=Al%20Ula"
+              },
+              "sub": "Nabataean Tombs",
+              "image": {
+                "url": "/images/destination-f.jpg",
+                "alt": "Al Ula Hegra UNESCO Tour"
+              }
+            },
+            {
+              "id": "saudi-activities-item-2",
+              "link": {
+                "label": "Edge of the World Riyadh",
+                "href": "/activities?destination=Riyadh"
+              },
+              "sub": "Jebel Fihrayn Cliff",
+              "image": {
+                "url": "/images/destination-e.jpg",
+                "alt": "Edge of the World Riyadh"
+              }
+            },
+            {
+              "id": "saudi-activities-item-3",
+              "link": {
+                "label": "Jeddah Historic Al Balad",
+                "href": "/activities?destination=Jeddah"
+              },
+              "sub": "Old Town Guided Tour",
+              "image": {
+                "url": "/images/destination-d.jpg",
+                "alt": "Jeddah Historic Al Balad"
+              }
+            },
+            {
+              "id": "saudi-activities-item-4",
+              "link": {
+                "label": "Elephant Rock Sunset",
+                "href": "/activities?destination=Al%20Ula"
+              },
+              "sub": "Al Ula Stargazing",
+              "image": {
+                "url": "/images/destination-c.jpg",
+                "alt": "Elephant Rock Sunset"
+              }
+            },
+            {
+              "id": "saudi-activities-item-5",
+              "link": {
+                "label": "Diriyah Historic City",
+                "href": "/activities?destination=Riyadh"
+              },
+              "sub": "At-Turaif UNESCO",
+              "image": {
+                "url": "/images/destination-b.jpg",
+                "alt": "Diriyah Historic City"
+              }
+            },
+            {
+              "id": "saudi-activities-item-6",
+              "link": {
+                "label": "Red Sea Private Boat",
+                "href": "/activities?destination=Jeddah"
+              },
+              "sub": "Snorkeling & Diving",
+              "image": {
+                "url": "/images/destination-a.jpg",
+                "alt": "Red Sea Private Boat"
+              }
+            },
+            {
+              "id": "saudi-activities-item-7",
+              "link": {
+                "label": "Riyadh Boulevard City",
+                "href": "/activities?destination=Riyadh"
+              },
+              "sub": "Entertainment City",
+              "image": {
+                "url": "/images/blog-1.jpg",
+                "alt": "Riyadh Boulevard City"
+              }
+            },
+            {
+              "id": "saudi-activities-item-8",
+              "link": {
+                "label": "Taif Mountain Cable Car",
+                "href": "/activities?destination=Taif"
+              },
+              "sub": "Rose Valley Views",
+              "image": {
+                "url": "/images/blog-2.jpg",
+                "alt": "Taif Mountain Cable Car"
+              }
+            },
+            {
+              "id": "saudi-activities-item-9",
+              "link": {
+                "label": "Dammam Corniche Cruise",
+                "href": "/activities?destination=Dammam"
+              },
+              "sub": "Arabian Gulf Cruise",
+              "image": {
+                "url": "/images/blog-3.jpg",
+                "alt": "Dammam Corniche Cruise"
+              }
+            }
+          ]
+        },
+        {
+          "id": "best-selling",
+          "icon": "🔥",
+          "label": "Best-Selling Experiences Worldwide",
+          "items": [
+            {
+              "id": "best-selling-item-1",
+              "link": {
+                "label": "Burj Khalifa At The Top",
+                "href": "/activities?destination=Dubai"
+              },
+              "sub": "Dubai, UAE",
+              "image": {
+                "url": "/images/destination-a.jpg",
+                "alt": "Burj Khalifa At The Top"
+              }
+            },
+            {
+              "id": "best-selling-item-2",
+              "link": {
+                "label": "Universal Studios Singapore",
+                "href": "/activities?destination=Singapore"
+              },
+              "sub": "Sentosa, Singapore",
+              "image": {
+                "url": "/images/destination-c.jpg",
+                "alt": "Universal Studios Singapore"
+              }
+            },
+            {
+              "id": "best-selling-item-3",
+              "link": {
+                "label": "Ferrari Theme Park",
+                "href": "/activities?destination=Abu%20Dhabi"
+              },
+              "sub": "Abu Dhabi, UAE",
+              "image": {
+                "url": "/images/destination-b.jpg",
+                "alt": "Ferrari Theme Park"
+              }
+            },
+            {
+              "id": "best-selling-item-4",
+              "link": {
+                "label": "Dubai Desert Safari BBQ",
+                "href": "/activities?destination=Dubai"
+              },
+              "sub": "Dubai, UAE",
+              "image": {
+                "url": "/images/destination-d.jpg",
+                "alt": "Dubai Desert Safari BBQ"
+              }
+            },
+            {
+              "id": "best-selling-item-5",
+              "link": {
+                "label": "Bali Nusa Penida Island",
+                "href": "/activities?destination=Bali"
+              },
+              "sub": "Bali, Indonesia",
+              "image": {
+                "url": "/images/blog-4.jpg",
+                "alt": "Bali Nusa Penida Island"
+              }
+            },
+            {
+              "id": "best-selling-item-6",
+              "link": {
+                "label": "Ha Long Bay 5★ Cruise",
+                "href": "/activities?destination=Hanoi"
+              },
+              "sub": "Vietnam",
+              "image": {
+                "url": "/images/blog-1.jpg",
+                "alt": "Ha Long Bay 5★ Cruise"
+              }
+            },
+            {
+              "id": "best-selling-item-7",
+              "link": {
+                "label": "Petronas Twin Towers",
+                "href": "/activities?destination=Kuala%20Lumpur"
+              },
+              "sub": "Kuala Lumpur, Malaysia",
+              "image": {
+                "url": "/images/destination-e.jpg",
+                "alt": "Petronas Twin Towers"
+              }
+            },
+            {
+              "id": "best-selling-item-8",
+              "link": {
+                "label": "Mount Batur Sunrise Trek",
+                "href": "/activities?destination=Bali"
+              },
+              "sub": "Bali, Indonesia",
+              "image": {
+                "url": "/images/blog-5.jpg",
+                "alt": "Mount Batur Sunrise Trek"
+              }
+            },
+            {
+              "id": "best-selling-item-9",
+              "link": {
+                "label": "Damaniyat Island Snorkeling",
+                "href": "/activities"
+              },
+              "sub": "Muscat / Gulf",
+              "image": {
+                "url": "/images/destination-d.jpg",
+                "alt": "Damaniyat Island Snorkeling"
+              }
+            }
+          ]
+        },
+        {
+          "id": "seasons-best",
+          "icon": "🍁",
+          "label": "Explore This Season's Best Activities",
+          "items": [
+            {
+              "id": "seasons-best-item-1",
+              "link": {
+                "label": "Dubai Miracle Garden",
+                "href": "/activities?destination=Dubai"
+              },
+              "sub": "Seasonal Spectacular",
+              "image": {
+                "url": "/images/blog-1.jpg",
+                "alt": "Dubai Miracle Garden"
+              }
+            },
+            {
+              "id": "seasons-best-item-2",
+              "link": {
+                "label": "Global Village Dubai",
+                "href": "/activities?destination=Dubai"
+              },
+              "sub": "World Culture Fair",
+              "image": {
+                "url": "/images/blog-2.jpg",
+                "alt": "Global Village Dubai"
+              }
+            },
+            {
+              "id": "seasons-best-item-3",
+              "link": {
+                "label": "Dubai Garden Glow",
+                "href": "/activities?destination=Dubai"
+              },
+              "sub": "Dinosaur & Light Park",
+              "image": {
+                "url": "/images/blog-3.jpg",
+                "alt": "Dubai Garden Glow"
+              }
+            },
+            {
+              "id": "seasons-best-item-4",
+              "link": {
+                "label": "Hatta Kayaking & Dam",
+                "href": "/activities?destination=Dubai"
+              },
+              "sub": "Hajar Mountains",
+              "image": {
+                "url": "/images/blog-4.jpg",
+                "alt": "Hatta Kayaking & Dam"
+              }
+            },
+            {
+              "id": "seasons-best-item-5",
+              "link": {
+                "label": "Jebel Jais Sledder Ride",
+                "href": "/activities?destination=Ras%20Al%20Khaimah"
+              },
+              "sub": "RAK Mountain Toboggan",
+              "image": {
+                "url": "/images/destination-e.jpg",
+                "alt": "Jebel Jais Sledder Ride"
+              }
+            },
+            {
+              "id": "seasons-best-item-6",
+              "link": {
+                "label": "Luxury Desert Glamping",
+                "href": "/activities?destination=Dubai"
+              },
+              "sub": "Overnight Under Stars",
+              "image": {
+                "url": "/images/destination-b.jpg",
+                "alt": "Luxury Desert Glamping"
+              }
+            },
+            {
+              "id": "seasons-best-item-7",
+              "link": {
+                "label": "Hot Air Balloon Flight",
+                "href": "/activities?destination=Dubai"
+              },
+              "sub": "Desert Sunrise Flight",
+              "image": {
+                "url": "/images/blog-5.jpg",
+                "alt": "Hot Air Balloon Flight"
+              }
+            },
+            {
+              "id": "seasons-best-item-8",
+              "link": {
+                "label": "Dubai Fountain Lake Ride",
+                "href": "/activities?destination=Dubai"
+              },
+              "sub": "Front Row Abra Boat",
+              "image": {
+                "url": "/images/blog-6.jpg",
+                "alt": "Dubai Fountain Lake Ride"
+              }
+            },
+            {
+              "id": "seasons-best-item-9",
+              "link": {
+                "label": "Skydive Palm Jumeirah",
+                "href": "/activities?destination=Dubai"
+              },
+              "sub": "Winter Clear Skies",
+              "image": {
+                "url": "/images/blog-7.jpg",
+                "alt": "Skydive Palm Jumeirah"
+              }
+            }
+          ]
+        },
+        {
+          "id": "bali-activities",
+          "icon": "🌺",
+          "label": "Best Activities in Bali",
+          "items": [
+            {
+              "id": "bali-activities-item-1",
+              "link": {
+                "label": "Bali Swing & Ubud Terraces",
+                "href": "/activities?destination=Bali"
+              },
+              "sub": "Tegalalang Valley",
+              "image": {
+                "url": "/images/blog-4.jpg",
+                "alt": "Bali Swing & Ubud Terraces"
+              }
+            },
+            {
+              "id": "bali-activities-item-2",
+              "link": {
+                "label": "Mount Batur Sunrise Trek",
+                "href": "/activities?destination=Bali"
+              },
+              "sub": "Volcanic Caldera",
+              "image": {
+                "url": "/images/blog-5.jpg",
+                "alt": "Mount Batur Sunrise Trek"
+              }
+            },
+            {
+              "id": "bali-activities-item-3",
+              "link": {
+                "label": "Nusa Penida Island Tour",
+                "href": "/activities?destination=Bali"
+              },
+              "sub": "Kelingking Beach",
+              "image": {
+                "url": "/images/blog-6.jpg",
+                "alt": "Nusa Penida Island Tour"
+              }
+            },
+            {
+              "id": "bali-activities-item-4",
+              "link": {
+                "label": "Uluwatu Temple Sunset",
+                "href": "/activities?destination=Bali"
+              },
+              "sub": "Kecak Fire Dance",
+              "image": {
+                "url": "/images/blog-7.jpg",
+                "alt": "Uluwatu Temple Sunset"
+              }
+            },
+            {
+              "id": "bali-activities-item-5",
+              "link": {
+                "label": "Tanah Lot Temple Sunset",
+                "href": "/activities?destination=Bali"
+              },
+              "sub": "Ocean Rock Shrine",
+              "image": {
+                "url": "/images/destination-a.jpg",
+                "alt": "Tanah Lot Temple Sunset"
+              }
+            },
+            {
+              "id": "bali-activities-item-6",
+              "link": {
+                "label": "Ayung River White Rafting",
+                "href": "/activities?destination=Bali"
+              },
+              "sub": "Ubud Rainforest",
+              "image": {
+                "url": "/images/destination-b.jpg",
+                "alt": "Ayung River White Rafting"
+              }
+            },
+            {
+              "id": "bali-activities-item-7",
+              "link": {
+                "label": "Waterbom Bali Waterpark",
+                "href": "/activities?destination=Bali"
+              },
+              "sub": "Kuta Waterslides",
+              "image": {
+                "url": "/images/destination-c.jpg",
+                "alt": "Waterbom Bali Waterpark"
+              }
+            },
+            {
+              "id": "bali-activities-item-8",
+              "link": {
+                "label": "Lempuyang Gate of Heaven",
+                "href": "/activities?destination=Bali"
+              },
+              "sub": "Mount Agung Vista",
+              "image": {
+                "url": "/images/destination-d.jpg",
+                "alt": "Lempuyang Gate of Heaven"
+              }
+            },
+            {
+              "id": "bali-activities-item-9",
+              "link": {
+                "label": "Seminyak Beach Day Pass",
+                "href": "/activities?destination=Bali"
+              },
+              "sub": "Sunset Beach Lounge",
+              "image": {
+                "url": "/images/destination-e.jpg",
+                "alt": "Seminyak Beach Day Pass"
+              }
+            }
+          ]
+        },
+        {
+          "id": "malaysia-activities",
+          "icon": "🌴",
+          "label": "Best Activities in Malaysia",
+          "items": [
+            {
+              "id": "malaysia-activities-item-1",
+              "link": {
+                "label": "Petronas Twin Towers",
+                "href": "/activities?destination=Kuala%20Lumpur"
+              },
+              "sub": "Skybridge & 86th Floor",
+              "image": {
+                "url": "/images/destination-d.jpg",
+                "alt": "Petronas Twin Towers"
+              }
+            },
+            {
+              "id": "malaysia-activities-item-2",
+              "link": {
+                "label": "Batu Caves Tour",
+                "href": "/activities?destination=Kuala%20Lumpur"
+              },
+              "sub": "Rainbow Stairs & Shrine",
+              "image": {
+                "url": "/images/blog-1.jpg",
+                "alt": "Batu Caves Tour"
+              }
+            },
+            {
+              "id": "malaysia-activities-item-3",
+              "link": {
+                "label": "Genting Cable Car & Park",
+                "href": "/activities?destination=Genting"
+              },
+              "sub": "SkyWorlds Highlands",
+              "image": {
+                "url": "/images/blog-2.jpg",
+                "alt": "Genting Cable Car & Park"
+              }
+            },
+            {
+              "id": "malaysia-activities-item-4",
+              "link": {
+                "label": "Langkawi Island Hopping",
+                "href": "/activities?destination=Langkawi"
+              },
+              "sub": "Eagle Feeding Boat",
+              "image": {
+                "url": "/images/blog-7.jpg",
+                "alt": "Langkawi Island Hopping"
+              }
+            },
+            {
+              "id": "malaysia-activities-item-5",
+              "link": {
+                "label": "Sunway Lagoon Theme Park",
+                "href": "/activities?destination=Kuala%20Lumpur"
+              },
+              "sub": "6 Themed Zones",
+              "image": {
+                "url": "/images/destination-e.jpg",
+                "alt": "Sunway Lagoon Theme Park"
+              }
+            },
+            {
+              "id": "malaysia-activities-item-6",
+              "link": {
+                "label": "KL Bird Park Walk-In",
+                "href": "/activities?destination=Kuala%20Lumpur"
+              },
+              "sub": "Tropical Free-Flight",
+              "image": {
+                "url": "/images/blog-3.jpg",
+                "alt": "KL Bird Park Walk-In"
+              }
+            },
+            {
+              "id": "malaysia-activities-item-7",
+              "link": {
+                "label": "Langkawi SkyCab & Bridge",
+                "href": "/activities?destination=Langkawi"
+              },
+              "sub": "Panoramic Sea Vistas",
+              "image": {
+                "url": "/images/blog-4.jpg",
+                "alt": "Langkawi SkyCab & Bridge"
+              }
+            },
+            {
+              "id": "malaysia-activities-item-8",
+              "link": {
+                "label": "Penang Hill & Habitat Walk",
+                "href": "/activities?destination=Penang"
+              },
+              "sub": "Canopy Nature Walk",
+              "image": {
+                "url": "/images/blog-5.jpg",
+                "alt": "Penang Hill & Habitat Walk"
+              }
+            },
+            {
+              "id": "malaysia-activities-item-9",
+              "link": {
+                "label": "Melaka Heritage Day Tour",
+                "href": "/activities?destination=Melaka"
+              },
+              "sub": "UNESCO Historic Town",
+              "image": {
+                "url": "/images/blog-6.jpg",
+                "alt": "Melaka Heritage Day Tour"
+              }
+            }
+          ]
+        },
+        {
+          "id": "vietnam-activities",
+          "icon": "🏮",
+          "label": "Best Activities In Vietnam",
+          "items": [
+            {
+              "id": "vietnam-activities-item-1",
+              "link": {
+                "label": "Ha Long Bay 5★ Day Cruise",
+                "href": "/activities?destination=Hanoi"
+              },
+              "sub": "Limestone Karsts",
+              "image": {
+                "url": "/images/blog-1.jpg",
+                "alt": "Ha Long Bay 5★ Day Cruise"
+              }
+            },
+            {
+              "id": "vietnam-activities-item-2",
+              "link": {
+                "label": "Ba Na Hills & Golden Bridge",
+                "href": "/activities?destination=Danang"
+              },
+              "sub": "Giant Stone Hands",
+              "image": {
+                "url": "/images/destination-05.jpg",
+                "alt": "Ba Na Hills & Golden Bridge"
+              }
+            },
+            {
+              "id": "vietnam-activities-item-3",
+              "link": {
+                "label": "Cu Chi Tunnels Guided Tour",
+                "href": "/activities?destination=Ho%20Chi%20Minh"
+              },
+              "sub": "Saigon War History",
+              "image": {
+                "url": "/images/blog-3.jpg",
+                "alt": "Cu Chi Tunnels Guided Tour"
+              }
+            },
+            {
+              "id": "vietnam-activities-item-4",
+              "link": {
+                "label": "Mekong Delta Boat Tour",
+                "href": "/activities?destination=Ho%20Chi%20Minh"
+              },
+              "sub": "Floating Market River",
+              "image": {
+                "url": "/images/blog-2.jpg",
+                "alt": "Mekong Delta Boat Tour"
+              }
+            },
+            {
+              "id": "vietnam-activities-item-5",
+              "link": {
+                "label": "Hoi An Lantern River Boat",
+                "href": "/activities?destination=Hoi%20An"
+              },
+              "sub": "Ancient Town Evening",
+              "image": {
+                "url": "/images/blog-4.jpg",
+                "alt": "Hoi An Lantern River Boat"
+              }
+            },
+            {
+              "id": "vietnam-activities-item-6",
+              "link": {
+                "label": "Phu Quoc Cable Car Ride",
+                "href": "/activities?destination=Phu%20Quoc"
+              },
+              "sub": "Hon Thom Aquatopia",
+              "image": {
+                "url": "/images/blog-2.jpg",
+                "alt": "Phu Quoc Cable Car Ride"
+              }
+            },
+            {
+              "id": "vietnam-activities-item-7",
+              "link": {
+                "label": "Trang An Ninh Binh Cave Boat",
+                "href": "/activities?destination=Hanoi"
+              },
+              "sub": "UNESCO Landscape",
+              "image": {
+                "url": "/images/blog-5.jpg",
+                "alt": "Trang An Ninh Binh Cave Boat"
+              }
+            },
+            {
+              "id": "vietnam-activities-item-8",
+              "link": {
+                "label": "Da Nang Marble Mountains",
+                "href": "/activities?destination=Danang"
+              },
+              "sub": "Caves & Pagodas",
+              "image": {
+                "url": "/images/blog-6.jpg",
+                "alt": "Da Nang Marble Mountains"
+              }
+            },
+            {
+              "id": "vietnam-activities-item-9",
+              "link": {
+                "label": "Fansipan Legend Cable Car",
+                "href": "/activities?destination=Sa%20Pa"
+              },
+              "sub": "Roof of Indochina",
+              "image": {
+                "url": "/images/blog-7.jpg",
+                "alt": "Fansipan Legend Cable Car"
+              }
+            }
+          ]
+        }
+      ],
+      "trendingLabel": "Trending Highlights",
+      "trendingTagline": "Handpicked Top Excursions",
+      "deals": [
+        {
+          "id": "burj-khalifa-deal",
+          "link": {
+            "label": "Burj Khalifa At The Top Tickets",
+            "href": "/activities?destination=Dubai"
+          },
+          "image": {
+            "url": "/images/destination-a.jpg",
+            "alt": "Burj Khalifa At The Top Tickets"
+          },
+          "badge": "Save 4.4%",
+          "rating": "★ 4.9",
+          "oldPrice": "AED 159",
+          "price": "AED 152.01"
+        },
+        {
+          "id": "universal-studios-deal",
+          "link": {
+            "label": "Universal Studios Singapore",
+            "href": "/activities?destination=Singapore"
+          },
+          "image": {
+            "url": "/images/destination-c.jpg",
+            "alt": "Universal Studios Singapore"
+          },
+          "badge": "Best Seller",
+          "rating": "★ 5.0",
+          "oldPrice": "",
+          "price": "AED 28.7"
+        },
+        {
+          "id": "ferrari-theme-park-deal",
+          "link": {
+            "label": "Ferrari Theme Park Abu Dhabi",
+            "href": "/activities?destination=Abu%20Dhabi"
+          },
+          "image": {
+            "url": "/images/destination-b.jpg",
+            "alt": "Ferrari Theme Park Abu Dhabi"
+          },
+          "badge": "Instant Confirmation",
+          "rating": "★ 4.9",
+          "oldPrice": "",
+          "price": "AED 345"
+        },
+        {
+          "id": "damaniyat-island-deal",
+          "link": {
+            "label": "Damaniyat Island Snorkeling Trip",
+            "href": "/activities"
+          },
+          "image": {
+            "url": "/images/destination-d.jpg",
+            "alt": "Damaniyat Island Snorkeling Trip"
+          },
+          "badge": "Top Rated",
+          "rating": "★ 4.8",
+          "oldPrice": "",
+          "price": "AED 691.72"
+        }
+      ]
+    }
+  }
+}

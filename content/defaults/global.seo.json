@@ -1,0 +1,21 @@
+{
+  "data": {
+    "siteName": "Karnish Tourism",
+    "defaultTitle": "Karnish Tourism — Travel Agency",
+    "defaultDescription": "Book top experiences, holidays, visas and cruises with Karnish Tourism.",
+    "favicon": {
+      "url": "/images/karnish-logo.png",
+      "alt": "Karnish Tourism"
+    },
+    "ogImage": {
+      "url": "",
+      "alt": ""
+    },
+    "pages": {
+      "home": {
+        "title": "Karnish Tourism — Activities, Holidays, Visas & Cruises",
+        "description": "Book top experiences, holidays, visas and cruises with Karnish Tourism."
+      }
+    }
+  }
+}
