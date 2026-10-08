@@ -1,4 +1,5 @@
 import { CacheService } from '../common/cache/cache.service';
+import { adminCatalogFilter, toAdminRecord } from '../common/catalog/admin-catalog';
 import {
   BadRequestException,
   ConflictException,
@@ -68,6 +69,7 @@ const CARD_FIELDS = {
   tags: 1,
   published: 1,
   isSample: 1,
+  updatedAt: 1,
 };
 
 type Lean = Record<string, any>;
@@ -239,7 +241,7 @@ export class EventsService {
 
   private async listUncached(query: ListEventsDto, admin = false) {
     const now = new Date();
-    const base = admin ? {} : this.visible;
+    const base = admin ? adminCatalogFilter(query) : this.visible;
     const filter = buildEventFilter(query, base, now, !admin);
     const { addFields, sort } = buildEventSort(query.sort, now);
     const skip = (query.page - 1) * query.limit;
@@ -261,7 +263,7 @@ export class EventsService {
     return {
       items: docs.map((doc) =>
         admin
-          ? { ...this.toCard(doc, now), published: doc.published, isSample: doc.isSample }
+          ? { ...this.toCard(doc, now), ...this.adminFlags(doc) }
           : this.toCard(doc, now),
       ),
       pagination: {
@@ -450,6 +452,21 @@ export class EventsService {
 
   private isDuplicateKey(error: unknown): boolean {
     return (error as { code?: number } | null)?.code === 11000;
+  }
+
+  /** Raw stored record for the admin editor, including unpublished and sample records. */
+  async getAdmin(id: string) {
+    const doc = await this.events.findById(id).lean<Lean>().exec();
+    if (!doc) throw new NotFoundException('Event not found');
+    return toAdminRecord(doc);
+  }
+
+  private adminFlags(doc: Lean) {
+    return {
+      published: Boolean(doc.published),
+      isSample: Boolean(doc.isSample),
+      updatedAt: doc.updatedAt ? new Date(doc.updatedAt).toISOString() : null,
+    };
   }
 
   private mapWriteError(error: unknown, slug?: string) {

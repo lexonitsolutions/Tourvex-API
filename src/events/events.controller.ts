@@ -1,7 +1,17 @@
-import { Body, Controller, Delete, Get, Headers, Param, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Header, Headers, Param, Patch, Post, Query, Req } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import type { Request } from 'express';
 import { Throttle } from '@nestjs/throttler';
+import { RequirePermission } from '../admin/require-permission.decorator';
+import { AuditService } from '../audit/audit.service';
 import { OptionalUserResolver } from '../auth/optional-user.resolver';
+import {
+  planCreateAudit,
+  planDeleteAudit,
+  planUpdateAudit,
+  recordCatalogAudit,
+} from '../common/catalog/admin-catalog';
+import { AuthenticatedUser, CurrentUser } from '../common/decorators/current-user.decorator';
 import { Public } from '../common/decorators/public.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
 import { Role } from '../common/enums/role.enum';
@@ -22,6 +32,7 @@ export class EventsController {
   constructor(
     private readonly events: EventsService,
     private readonly optionalUser: OptionalUserResolver,
+    private readonly audit: AuditService,
   ) {}
 
   // Static routes must stay above ':slug'.
@@ -35,10 +46,22 @@ export class EventsController {
 
   @Roles(Role.Content, Role.Admin, Role.SuperAdmin)
   @ApiBearerAuth()
+  @RequirePermission('catalog.read')
+  @Header('Cache-Control', 'no-store')
   @Get('admin/all')
   @ApiOperation({ summary: 'List every event including unpublished, sample and session-less ones' })
   listAll(@Query() query: ListEventsDto) {
     return this.events.list(query, true);
+  }
+
+  @Roles(Role.Content, Role.Admin, Role.SuperAdmin)
+  @ApiBearerAuth()
+  @RequirePermission('catalog.read')
+  @Header('Cache-Control', 'no-store')
+  @Get('admin/:id')
+  @ApiOperation({ summary: 'Full stored event record for editing, including unpublished ones' })
+  getAdmin(@Param('id', ParseObjectIdPipe) id: string) {
+    return this.events.getAdmin(id);
   }
 
   @Roles(Role.Sales, Role.Support, Role.Admin, Role.SuperAdmin)
@@ -93,22 +116,48 @@ export class EventsController {
 
   @Roles(Role.Content, Role.Admin, Role.SuperAdmin)
   @ApiBearerAuth()
+  @RequirePermission('catalog.write')
   @Post()
-  create(@Body() dto: CreateEventDto) {
-    return this.events.create(dto);
+  async create(
+    @Body() dto: CreateEventDto,
+    @CurrentUser() user: AuthenticatedUser,
+    @Req() request: Request,
+  ) {
+    const created = await this.events.create(dto);
+    await recordCatalogAudit(this.audit, user, request, 'event', planCreateAudit('event', created, dto));
+    return created;
   }
 
   @Roles(Role.Content, Role.Admin, Role.SuperAdmin)
   @ApiBearerAuth()
+  @RequirePermission('catalog.write')
   @Patch(':id')
-  update(@Param('id', ParseObjectIdPipe) id: string, @Body() dto: UpdateEventDto) {
-    return this.events.update(id, dto);
+  async update(
+    @Param('id', ParseObjectIdPipe) id: string,
+    @Body() dto: UpdateEventDto,
+    @CurrentUser() user: AuthenticatedUser,
+    @Req() request: Request,
+  ) {
+    const before = await this.events.getAdmin(id);
+    const updated = await this.events.update(id, dto);
+    for (const entry of planUpdateAudit('event', before, dto)) {
+      await recordCatalogAudit(this.audit, user, request, 'event', entry);
+    }
+    return updated;
   }
 
   @Roles(Role.Content, Role.Admin, Role.SuperAdmin)
   @ApiBearerAuth()
+  @RequirePermission('catalog.delete')
   @Delete(':id')
-  remove(@Param('id', ParseObjectIdPipe) id: string) {
-    return this.events.remove(id);
+  async remove(
+    @Param('id', ParseObjectIdPipe) id: string,
+    @CurrentUser() user: AuthenticatedUser,
+    @Req() request: Request,
+  ) {
+    const before = await this.events.getAdmin(id);
+    const result = await this.events.remove(id);
+    await recordCatalogAudit(this.audit, user, request, 'event', planDeleteAudit('event', before));
+    return result;
   }
 }

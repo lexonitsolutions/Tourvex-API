@@ -98,4 +98,23 @@ describe('buildMenu', () => {
       'finance-reconciliation',
     ]);
   });
+
+  it('lists the catalog group between partners and content for catalog readers', () => {
+    for (const role of [Role.Content, Role.Admin, Role.SuperAdmin]) {
+      const menu = buildMenu(permissionsForRoles([role]));
+      const ids = menu.map((item) => item.id);
+      expect(ids).toContain('catalog');
+      if (ids.includes('partners')) expect(ids.indexOf('catalog')).toBeGreaterThan(ids.indexOf('partners'));
+      expect(ids.indexOf('catalog')).toBeLessThan(ids.indexOf('content'));
+      const catalog = menu.find((item) => item.id === 'catalog');
+      expect(catalog).toMatchObject({ label: 'Catalog', href: '/admin/catalog', icon: 'catalog' });
+      expect(catalog?.children).toEqual([
+        { id: 'catalog-holidays', label: 'Holidays', href: '/admin/catalog/holidays', icon: 'holidays' },
+        { id: 'catalog-cruises', label: 'Cruises', href: '/admin/catalog/cruises', icon: 'cruises' },
+        { id: 'catalog-events', label: 'Events', href: '/admin/catalog/events', icon: 'events' },
+        { id: 'catalog-visas', label: 'Visas', href: '/admin/catalog/visas', icon: 'visas' },
+      ]);
+    }
+    expect(buildMenu([]).map((item) => item.id)).not.toContain('catalog');
+  });
 });

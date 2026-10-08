@@ -1,7 +1,17 @@
-import { Body, Controller, Delete, Get, Headers, Param, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Header, Headers, Param, Patch, Post, Query, Req } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import type { Request } from 'express';
 import { Throttle } from '@nestjs/throttler';
+import { RequirePermission } from '../admin/require-permission.decorator';
+import { AuditService } from '../audit/audit.service';
 import { OptionalUserResolver } from '../auth/optional-user.resolver';
+import {
+  planCreateAudit,
+  planDeleteAudit,
+  planUpdateAudit,
+  recordCatalogAudit,
+} from '../common/catalog/admin-catalog';
+import { AuthenticatedUser, CurrentUser } from '../common/decorators/current-user.decorator';
 import { Public } from '../common/decorators/public.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
 import { Role } from '../common/enums/role.enum';
@@ -19,6 +29,7 @@ export class VisasController {
   constructor(
     private readonly visas: VisasService,
     private readonly optionalUser: OptionalUserResolver,
+    private readonly audit: AuditService,
   ) {}
 
   // Static routes must stay above ':slug'.
@@ -32,10 +43,22 @@ export class VisasController {
 
   @Roles(Role.Content, Role.Admin, Role.SuperAdmin)
   @ApiBearerAuth()
+  @RequirePermission('catalog.read')
+  @Header('Cache-Control', 'no-store')
   @Get('admin/all')
   @ApiOperation({ summary: 'List every visa including unpublished and sample ones' })
   listAll(@Query() query: ListVisasDto) {
     return this.visas.list(query, true);
+  }
+
+  @Roles(Role.Content, Role.Admin, Role.SuperAdmin)
+  @ApiBearerAuth()
+  @RequirePermission('catalog.read')
+  @Header('Cache-Control', 'no-store')
+  @Get('admin/:id')
+  @ApiOperation({ summary: 'Full stored visa record for editing, including unpublished ones' })
+  getAdmin(@Param('id', ParseObjectIdPipe) id: string) {
+    return this.visas.getAdmin(id);
   }
 
   @Roles(Role.Sales, Role.Support, Role.Admin, Role.SuperAdmin)
@@ -90,22 +113,48 @@ export class VisasController {
 
   @Roles(Role.Content, Role.Admin, Role.SuperAdmin)
   @ApiBearerAuth()
+  @RequirePermission('catalog.write')
   @Post()
-  create(@Body() dto: CreateVisaDto) {
-    return this.visas.create(dto);
+  async create(
+    @Body() dto: CreateVisaDto,
+    @CurrentUser() user: AuthenticatedUser,
+    @Req() request: Request,
+  ) {
+    const created = await this.visas.create(dto);
+    await recordCatalogAudit(this.audit, user, request, 'visa', planCreateAudit('visa', created, dto));
+    return created;
   }
 
   @Roles(Role.Content, Role.Admin, Role.SuperAdmin)
   @ApiBearerAuth()
+  @RequirePermission('catalog.write')
   @Patch(':id')
-  update(@Param('id', ParseObjectIdPipe) id: string, @Body() dto: UpdateVisaDto) {
-    return this.visas.update(id, dto);
+  async update(
+    @Param('id', ParseObjectIdPipe) id: string,
+    @Body() dto: UpdateVisaDto,
+    @CurrentUser() user: AuthenticatedUser,
+    @Req() request: Request,
+  ) {
+    const before = await this.visas.getAdmin(id);
+    const updated = await this.visas.update(id, dto);
+    for (const entry of planUpdateAudit('visa', before, dto)) {
+      await recordCatalogAudit(this.audit, user, request, 'visa', entry);
+    }
+    return updated;
   }
 
   @Roles(Role.Content, Role.Admin, Role.SuperAdmin)
   @ApiBearerAuth()
+  @RequirePermission('catalog.delete')
   @Delete(':id')
-  remove(@Param('id', ParseObjectIdPipe) id: string) {
-    return this.visas.remove(id);
+  async remove(
+    @Param('id', ParseObjectIdPipe) id: string,
+    @CurrentUser() user: AuthenticatedUser,
+    @Req() request: Request,
+  ) {
+    const before = await this.visas.getAdmin(id);
+    const result = await this.visas.remove(id);
+    await recordCatalogAudit(this.audit, user, request, 'visa', planDeleteAudit('visa', before));
+    return result;
   }
 }

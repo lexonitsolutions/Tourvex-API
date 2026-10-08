@@ -1,4 +1,5 @@
 import { ExecutionContext, ForbiddenException, UnauthorizedException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
 import { verifyToken } from '@clerk/backend';
 import { ClerkTokenVerifier } from '../clerk/clerk-token-verifier.service';
@@ -22,15 +23,19 @@ function contextFor(request: Record<string, any>): ExecutionContext {
 describe('ClerkAuthGuard', () => {
   const localId = '665f1c2b9a1e4b0012345678';
   let reflector: { getAllAndOverride: jest.Mock };
-  let users: { resolveFromClerk: jest.Mock };
+  let users: { resolveFromClerk: jest.Mock; ensureDevAdmin: jest.Mock };
+  let env: Record<string, string>;
+  let clerkConfigured: boolean;
   let guard: ClerkAuthGuard;
 
   beforeEach(() => {
     mockedVerifyToken.mockReset();
     reflector = { getAllAndOverride: jest.fn().mockReturnValue(false) };
-    users = { resolveFromClerk: jest.fn() };
+    users = { resolveFromClerk: jest.fn(), ensureDevAdmin: jest.fn() };
+    env = { NODE_ENV: 'production' };
+    clerkConfigured = true;
     const clerk = {
-      isConfigured: true,
+      isConfigured: clerkConfigured,
       secretKey: 'sk_test_unit',
       authorizedParties: ['http://localhost:3000'],
     } as unknown as ClerkService;
@@ -38,6 +43,7 @@ describe('ClerkAuthGuard', () => {
       reflector as unknown as Reflector,
       new ClerkTokenVerifier(clerk),
       users as unknown as UsersService,
+      { get: (key: string) => env[key] } as unknown as ConfigService,
     );
   });
 
@@ -148,6 +154,37 @@ describe('ClerkAuthGuard', () => {
       roles: ['customer', 'b2b_owner'],
       partnerId: 'partner-1',
       clerkUserId: 'user_123',
+    });
+  });
+
+  describe('local development sign-in', () => {
+    const devRequest = (address: string, token = 'dev-local-admin') => ({
+      headers: { authorization: `Bearer ${token}` },
+      socket: { remoteAddress: address },
+    });
+    const devIdentity = { id: localId, email: 'dev.admin@tourvex.local', roles: ['super_admin'], status: UserStatus.Active, active: true, clerkUserId: 'dev_local_admin' };
+
+    it('signs in the local administrator without Clerk in development with the flag, from this machine', async () => {
+      env = { NODE_ENV: 'development', DEV_AUTH_ENABLED: 'true' };
+      clerkConfigured = false;
+      users.resolveFromClerk.mockResolvedValue(devIdentity);
+      const request: Record<string, any> = devRequest('127.0.0.1');
+      await expect(guard.canActivate(contextFor(request))).resolves.toBe(true);
+      expect(users.ensureDevAdmin).toHaveBeenCalledWith('dev_local_admin', 'dev.admin@tourvex.local');
+      expect(mockedVerifyToken).not.toHaveBeenCalled();
+      expect(request.user.roles).toEqual(['super_admin']);
+    });
+
+    it.each([
+      ['production', 'true', '127.0.0.1'],
+      ['development', undefined, '127.0.0.1'],
+      ['development', 'false', '127.0.0.1'],
+      ['development', 'true', '192.168.0.9'],
+    ])('is refused when NODE_ENV=%s, DEV_AUTH_ENABLED=%s, address %s', async (nodeEnv, flag, address) => {
+      env = { NODE_ENV: nodeEnv, ...(flag ? { DEV_AUTH_ENABLED: flag } : {}) };
+      mockedVerifyToken.mockRejectedValue(new Error('not a clerk token'));
+      await expect(guard.canActivate(contextFor(devRequest(address)))).rejects.toThrow(UnauthorizedException);
+      expect(users.ensureDevAdmin).not.toHaveBeenCalled();
     });
   });
 });

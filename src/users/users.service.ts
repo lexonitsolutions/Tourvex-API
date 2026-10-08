@@ -83,6 +83,24 @@ export class UsersService {
     return identity;
   }
 
+  /**
+   * LOCAL DEVELOPMENT ONLY (see auth/dev-auth.ts): creates the local super administrator used by the dev sign-in, or repairs it
+   * if it was changed. Only called by the guard after it has confirmed development mode, the explicit flag and a loopback request.
+   */
+  async ensureDevAdmin(clerkUserId: string, email: string): Promise<void> {
+    await this.users
+      .updateOne(
+        { clerkUserId },
+        {
+          $set: { roles: [Role.SuperAdmin], status: UserStatus.Active, active: true },
+          $setOnInsert: { firstName: 'Local', lastName: 'Developer', email, clerkUserId },
+        },
+        { upsert: true },
+      )
+      .exec();
+    this.identityCache.invalidate(clerkUserId);
+  }
+
   async getProfile(id: string): Promise<UserProfile> {
     const user = await this.users.findById(id).lean<User>().exec();
     if (!user) throw new NotFoundException('User not found');

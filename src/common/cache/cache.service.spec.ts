@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/require-await -- the cache loaders under test are deliberately async stubs that return a value */
 import type { ConfigService } from '@nestjs/config';
 import { CacheService } from './cache.service';
 

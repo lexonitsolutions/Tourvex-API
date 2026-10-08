@@ -5,6 +5,7 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
 import type { Request } from 'express';
 import { ClerkTokenVerifier, UNAUTHORIZED_MESSAGE } from '../clerk/clerk-token-verifier.service';
@@ -12,6 +13,7 @@ import { AuthenticatedUser } from '../common/decorators/current-user.decorator';
 import { IS_PUBLIC_KEY } from '../common/decorators/public.decorator';
 import { UserStatus } from '../users/schemas/user.schema';
 import { UsersService } from '../users/users.service';
+import { acceptsDevAuth, DEV_AUTH_CLERK_ID, DEV_AUTH_EMAIL } from './dev-auth';
 
 /**
  * Global guard: trusts Clerk session tokens (`Authorization: Bearer <token>`) and maps them to the
@@ -23,6 +25,7 @@ export class ClerkAuthGuard implements CanActivate {
     private readonly reflector: Reflector,
     private readonly verifier: ClerkTokenVerifier,
     private readonly users: UsersService,
+    private readonly config: ConfigService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -35,9 +38,17 @@ export class ClerkAuthGuard implements CanActivate {
     const request = context.switchToHttp().getRequest<Request & { user?: AuthenticatedUser }>();
     const token = this.verifier.extractBearerToken(request.headers.authorization);
     if (!token) throw new UnauthorizedException(UNAUTHORIZED_MESSAGE);
-    if (!this.verifier.isConfigured) throw new UnauthorizedException(UNAUTHORIZED_MESSAGE);
 
-    const clerkUserId = await this.verifier.verify(token);
+    // Local development sign-in (see auth/dev-auth.ts): never true in production or from another machine.
+    const isDevSession = acceptsDevAuth(
+      { nodeEnv: this.config.get<string>('NODE_ENV'), enabled: this.config.get<string>('DEV_AUTH_ENABLED') },
+      token,
+      request.socket?.remoteAddress,
+    );
+    if (isDevSession) await this.users.ensureDevAdmin(DEV_AUTH_CLERK_ID, DEV_AUTH_EMAIL);
+    else if (!this.verifier.isConfigured) throw new UnauthorizedException(UNAUTHORIZED_MESSAGE);
+
+    const clerkUserId = isDevSession ? DEV_AUTH_CLERK_ID : await this.verifier.verify(token);
     const identity = await this.users.resolveFromClerk(clerkUserId);
     if (identity.status !== UserStatus.Active || identity.active === false) {
       throw new ForbiddenException('Account is not active');

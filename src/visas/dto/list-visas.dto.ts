@@ -1,9 +1,10 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
+import { AdminCatalogFilterDto } from '../../common/catalog/admin-catalog-filter.dto';
 import { IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
 import { VISA_KINDS, VISA_SORTS, VisaKind, VisaSort } from '../visas.utils';
 
-export class ListVisasDto {
+export class ListVisasDto extends AdminCatalogFilterDto {
   @ApiPropertyOptional({ description: 'Case-insensitive substring over country and title' })
   @IsOptional()
   @IsString()

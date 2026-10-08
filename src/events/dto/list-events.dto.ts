@@ -1,5 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
+import { AdminCatalogFilterDto } from '../../common/catalog/admin-catalog-filter.dto';
 import {
   IsIn,
   IsInt,
@@ -15,7 +16,7 @@ import { DATE_PATTERN, EVENT_SORTS, EventSort } from '../events.utils';
 
 const DAY_MESSAGE = 'must be a real date in YYYY-MM-DD format';
 
-export class ListEventsDto {
+export class ListEventsDto extends AdminCatalogFilterDto {
   @ApiPropertyOptional({
     description: 'Case- and diacritic-insensitive substring over title, venue, city and tags',
   })

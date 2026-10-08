@@ -1,7 +1,17 @@
-import { Body, Controller, Delete, Get, Headers, Param, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Header, Headers, Param, Patch, Post, Query, Req } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import type { Request } from 'express';
 import { Throttle } from '@nestjs/throttler';
+import { RequirePermission } from '../admin/require-permission.decorator';
+import { AuditService } from '../audit/audit.service';
 import { OptionalUserResolver } from '../auth/optional-user.resolver';
+import {
+  planCreateAudit,
+  planDeleteAudit,
+  planUpdateAudit,
+  recordCatalogAudit,
+} from '../common/catalog/admin-catalog';
+import { AuthenticatedUser, CurrentUser } from '../common/decorators/current-user.decorator';
 import { Public } from '../common/decorators/public.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
 import { Role } from '../common/enums/role.enum';
@@ -19,6 +29,7 @@ export class HolidaysController {
   constructor(
     private readonly holidays: HolidaysService,
     private readonly optionalUser: OptionalUserResolver,
+    private readonly audit: AuditService,
   ) {}
 
   // Static routes must stay above ':slug'.
@@ -32,10 +43,22 @@ export class HolidaysController {
 
   @Roles(Role.Content, Role.Admin, Role.SuperAdmin)
   @ApiBearerAuth()
+  @RequirePermission('catalog.read')
+  @Header('Cache-Control', 'no-store')
   @Get('admin/all')
   @ApiOperation({ summary: 'List every package including unpublished and sample ones' })
   listAll(@Query() query: ListHolidaysDto) {
     return this.holidays.list(query, true);
+  }
+
+  @Roles(Role.Content, Role.Admin, Role.SuperAdmin)
+  @ApiBearerAuth()
+  @RequirePermission('catalog.read')
+  @Header('Cache-Control', 'no-store')
+  @Get('admin/:id')
+  @ApiOperation({ summary: 'Full stored holiday record for editing, including unpublished ones' })
+  getAdmin(@Param('id', ParseObjectIdPipe) id: string) {
+    return this.holidays.getAdmin(id);
   }
 
   @Roles(Role.Sales, Role.Support, Role.Admin, Role.SuperAdmin)
@@ -86,22 +109,48 @@ export class HolidaysController {
 
   @Roles(Role.Content, Role.Admin, Role.SuperAdmin)
   @ApiBearerAuth()
+  @RequirePermission('catalog.write')
   @Post()
-  create(@Body() dto: CreateHolidayDto) {
-    return this.holidays.create(dto);
+  async create(
+    @Body() dto: CreateHolidayDto,
+    @CurrentUser() user: AuthenticatedUser,
+    @Req() request: Request,
+  ) {
+    const created = await this.holidays.create(dto);
+    await recordCatalogAudit(this.audit, user, request, 'holiday', planCreateAudit('holiday', created, dto));
+    return created;
   }
 
   @Roles(Role.Content, Role.Admin, Role.SuperAdmin)
   @ApiBearerAuth()
+  @RequirePermission('catalog.write')
   @Patch(':id')
-  update(@Param('id', ParseObjectIdPipe) id: string, @Body() dto: UpdateHolidayDto) {
-    return this.holidays.update(id, dto);
+  async update(
+    @Param('id', ParseObjectIdPipe) id: string,
+    @Body() dto: UpdateHolidayDto,
+    @CurrentUser() user: AuthenticatedUser,
+    @Req() request: Request,
+  ) {
+    const before = await this.holidays.getAdmin(id);
+    const updated = await this.holidays.update(id, dto);
+    for (const entry of planUpdateAudit('holiday', before, dto)) {
+      await recordCatalogAudit(this.audit, user, request, 'holiday', entry);
+    }
+    return updated;
   }
 
   @Roles(Role.Content, Role.Admin, Role.SuperAdmin)
   @ApiBearerAuth()
+  @RequirePermission('catalog.delete')
   @Delete(':id')
-  remove(@Param('id', ParseObjectIdPipe) id: string) {
-    return this.holidays.remove(id);
+  async remove(
+    @Param('id', ParseObjectIdPipe) id: string,
+    @CurrentUser() user: AuthenticatedUser,
+    @Req() request: Request,
+  ) {
+    const before = await this.holidays.getAdmin(id);
+    const result = await this.holidays.remove(id);
+    await recordCatalogAudit(this.audit, user, request, 'holiday', planDeleteAudit('holiday', before));
+    return result;
   }
 }

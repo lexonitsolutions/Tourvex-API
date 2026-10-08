@@ -1,9 +1,10 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
+import { AdminCatalogFilterDto } from '../../common/catalog/admin-catalog-filter.dto';
 import { IsIn, IsInt, IsOptional, IsString, Matches, Max, MaxLength, Min } from 'class-validator';
 import { CRUISE_SORTS, CruiseSort, MONTH_PATTERN } from '../cruises.utils';
 
-export class ListCruisesDto {
+export class ListCruisesDto extends AdminCatalogFilterDto {
   @ApiPropertyOptional({
     description: 'Case- and diacritic-insensitive substring over title, ship, line and ports',
   })

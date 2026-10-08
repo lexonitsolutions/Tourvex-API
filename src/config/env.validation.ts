@@ -38,6 +38,16 @@ class EnvironmentVariables {
   @IsString()
   REDIS_URL?: string;
 
+  /**
+   * LOCAL DEVELOPMENT ONLY: `true` lets the admin sign in without Clerk from this machine (see auth/dev-auth.ts). It only takes
+   * effect when NODE_ENV=development, and the API refuses to start with it enabled in production.
+   */
+  @IsOptional()
+  @IsBooleanString()
+  @ValidateIf((env: EnvironmentVariables) => env.NODE_ENV === 'production')
+  @Matches(/^(?!true$)/i, { message: 'DEV_AUTH_ENABLED must not be true when NODE_ENV=production' })
+  DEV_AUTH_ENABLED?: string;
+
   /** `false` turns the read cache off. Defaults to on, except when NODE_ENV=test. */
   @IsOptional()
   @IsBooleanString()

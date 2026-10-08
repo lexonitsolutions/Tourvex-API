@@ -1,4 +1,5 @@
 import { CacheService } from '../common/cache/cache.service';
+import { adminCatalogFilter, toAdminRecord } from '../common/catalog/admin-catalog';
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { LeadsService } from '../leads/leads.service';
@@ -47,6 +48,7 @@ const CARD_FIELDS = {
   collections: 1,
   published: 1,
   isSample: 1,
+  updatedAt: 1,
 };
 const CARD_FIND_PROJECTION = { ...CARD_FIELDS, images: { $slice: 1 } };
 const CARD_AGG_PROJECTION = { ...CARD_FIELDS, images: { $slice: ['$images', 1] } };
@@ -116,7 +118,7 @@ export class HolidaysService {
   }
 
   private async listUncached(query: ListHolidaysDto, admin = false) {
-    const base = admin ? {} : this.visible;
+    const base = admin ? adminCatalogFilter(query) : this.visible;
     const filter = buildHolidayFilter(query, base);
     const { addFields, sort } = buildHolidaySort(query.sort);
     const skip = (query.page - 1) * query.limit;
@@ -136,7 +138,7 @@ export class HolidaysService {
       this.facets(base),
     ]);
     return {
-      items: docs.map((doc) => (admin ? { ...this.toCard(doc), published: doc.published, isSample: doc.isSample } : this.toCard(doc))),
+      items: docs.map((doc) => (admin ? { ...this.toCard(doc), ...this.adminFlags(doc) } : this.toCard(doc))),
       pagination: { page: query.page, limit: query.limit, total, pages: Math.ceil(total / query.limit) },
       facets,
       currency: query.currency,
@@ -229,6 +231,21 @@ export class HolidaysService {
     const deleted = await this.holidays.findByIdAndDelete(id).select({ _id: 1 }).lean().exec();
     if (!deleted) throw new NotFoundException('Holiday package not found');
     return { id, deleted: true };
+  }
+
+  /** Raw stored record for the admin editor, including unpublished and sample records. */
+  async getAdmin(id: string) {
+    const doc = await this.holidays.findById(id).lean<Lean>().exec();
+    if (!doc) throw new NotFoundException('Holiday package not found');
+    return toAdminRecord(doc);
+  }
+
+  private adminFlags(doc: Lean) {
+    return {
+      published: Boolean(doc.published),
+      isSample: Boolean(doc.isSample),
+      updatedAt: doc.updatedAt ? new Date(doc.updatedAt).toISOString() : null,
+    };
   }
 
   private mapWriteError(error: unknown, slug?: string) {

@@ -1,7 +1,17 @@
-import { Body, Controller, Delete, Get, Headers, Param, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Header, Headers, Param, Patch, Post, Query, Req } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import type { Request } from 'express';
 import { Throttle } from '@nestjs/throttler';
+import { RequirePermission } from '../admin/require-permission.decorator';
+import { AuditService } from '../audit/audit.service';
 import { OptionalUserResolver } from '../auth/optional-user.resolver';
+import {
+  planCreateAudit,
+  planDeleteAudit,
+  planUpdateAudit,
+  recordCatalogAudit,
+} from '../common/catalog/admin-catalog';
+import { AuthenticatedUser, CurrentUser } from '../common/decorators/current-user.decorator';
 import { Public } from '../common/decorators/public.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
 import { Role } from '../common/enums/role.enum';
@@ -19,6 +29,7 @@ export class CruisesController {
   constructor(
     private readonly cruises: CruisesService,
     private readonly optionalUser: OptionalUserResolver,
+    private readonly audit: AuditService,
   ) {}
 
   // Static routes must stay above ':slug'.
@@ -32,10 +43,22 @@ export class CruisesController {
 
   @Roles(Role.Content, Role.Admin, Role.SuperAdmin)
   @ApiBearerAuth()
+  @RequirePermission('catalog.read')
+  @Header('Cache-Control', 'no-store')
   @Get('admin/all')
   @ApiOperation({ summary: 'List every cruise including unpublished, sample and departure-less ones' })
   listAll(@Query() query: ListCruisesDto) {
     return this.cruises.list(query, true);
+  }
+
+  @Roles(Role.Content, Role.Admin, Role.SuperAdmin)
+  @ApiBearerAuth()
+  @RequirePermission('catalog.read')
+  @Header('Cache-Control', 'no-store')
+  @Get('admin/:id')
+  @ApiOperation({ summary: 'Full stored cruise record for editing, including unpublished ones' })
+  getAdmin(@Param('id', ParseObjectIdPipe) id: string) {
+    return this.cruises.getAdmin(id);
   }
 
   @Roles(Role.Sales, Role.Support, Role.Admin, Role.SuperAdmin)
@@ -90,22 +113,48 @@ export class CruisesController {
 
   @Roles(Role.Content, Role.Admin, Role.SuperAdmin)
   @ApiBearerAuth()
+  @RequirePermission('catalog.write')
   @Post()
-  create(@Body() dto: CreateCruiseDto) {
-    return this.cruises.create(dto);
+  async create(
+    @Body() dto: CreateCruiseDto,
+    @CurrentUser() user: AuthenticatedUser,
+    @Req() request: Request,
+  ) {
+    const created = await this.cruises.create(dto);
+    await recordCatalogAudit(this.audit, user, request, 'cruise', planCreateAudit('cruise', created, dto));
+    return created;
   }
 
   @Roles(Role.Content, Role.Admin, Role.SuperAdmin)
   @ApiBearerAuth()
+  @RequirePermission('catalog.write')
   @Patch(':id')
-  update(@Param('id', ParseObjectIdPipe) id: string, @Body() dto: UpdateCruiseDto) {
-    return this.cruises.update(id, dto);
+  async update(
+    @Param('id', ParseObjectIdPipe) id: string,
+    @Body() dto: UpdateCruiseDto,
+    @CurrentUser() user: AuthenticatedUser,
+    @Req() request: Request,
+  ) {
+    const before = await this.cruises.getAdmin(id);
+    const updated = await this.cruises.update(id, dto);
+    for (const entry of planUpdateAudit('cruise', before, dto)) {
+      await recordCatalogAudit(this.audit, user, request, 'cruise', entry);
+    }
+    return updated;
   }
 
   @Roles(Role.Content, Role.Admin, Role.SuperAdmin)
   @ApiBearerAuth()
+  @RequirePermission('catalog.delete')
   @Delete(':id')
-  remove(@Param('id', ParseObjectIdPipe) id: string) {
-    return this.cruises.remove(id);
+  async remove(
+    @Param('id', ParseObjectIdPipe) id: string,
+    @CurrentUser() user: AuthenticatedUser,
+    @Req() request: Request,
+  ) {
+    const before = await this.cruises.getAdmin(id);
+    const result = await this.cruises.remove(id);
+    await recordCatalogAudit(this.audit, user, request, 'cruise', planDeleteAudit('cruise', before));
+    return result;
   }
 }

@@ -1,9 +1,10 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
+import { AdminCatalogFilterDto } from '../../common/catalog/admin-catalog-filter.dto';
 import { IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
 import { HOLIDAY_SORTS, HolidaySort } from '../holidays.utils';
 
-export class ListHolidaysDto {
+export class ListHolidaysDto extends AdminCatalogFilterDto {
   @ApiPropertyOptional({ description: 'Text search over title, destinations, themes and summary' })
   @IsOptional()
   @IsString()
