@@ -33,6 +33,7 @@ import { PaymentsModule } from './payments/payments.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { PlatformModule } from './platform/platform.module';
 import { ReviewsModule } from './reviews/reviews.module';
+import { StockModule } from './stock/stock.module';
 import { SuppliersModule } from './suppliers/suppliers.module';
 import { UsersModule } from './users/users.module';
 import { VisasModule } from './visas/visas.module';
@@ -65,6 +66,7 @@ import { TicketsModule } from './tickets/tickets.module';
     AdminModule,
     AdminReportsModule,
     CatalogModule,
+    StockModule,
     HolidaysModule,
     VisasModule,
     CruisesModule,

@@ -15,6 +15,10 @@ import {
 
 export type BookingDocument = HydratedDocument<Booking>;
 
+/** Service types of bookings created from holiday, cruise and event enquiries (see the stock module). */
+export const ENQUIRY_SERVICE_TYPES = ['holiday', 'cruise', 'event'] as const;
+export type BookingServiceType = ServiceType | (typeof ENQUIRY_SERVICE_TYPES)[number];
+
 export enum BookingStatus {
   PendingPayment = 'pending_payment',
   Confirmed = 'confirmed',
@@ -76,8 +80,8 @@ export class Booking {
   @Prop({ type: String })
   sku?: string;
 
-  @Prop({ type: String, required: true, enum: ServiceType })
-  serviceType: ServiceType;
+  @Prop({ type: String, required: true, enum: [...Object.values(ServiceType), ...ENQUIRY_SERVICE_TYPES] })
+  serviceType: BookingServiceType;
 
   @Prop({ type: String, required: true })
   title: string;
@@ -187,6 +191,24 @@ export class Booking {
   @Prop({ type: String })
   promoCode?: string;
 
+  // Stock identity (see the stock module). Activity bookings keep using activitySlug/optionId; bookings created
+  // from a holiday/cruise/event enquiry carry these fields instead.
+  @Prop({ type: String })
+  stockProductType?: string;
+
+  @Prop({ type: String })
+  stockProductRef?: string;
+
+  @Prop({ type: String })
+  stockVariantId?: string;
+
+  /**
+   * Set when a confirmed booking is cancelled or fully refunded: true = its units went back to stock, false = they
+   * stay used (cancelled after the cutoff). Cancelled/refunded bookings only count as sold while this is false.
+   */
+  @Prop({ type: Boolean })
+  stockReleased?: boolean;
+
   /** While pending_payment, the booking counts against capacity until this instant. */
   @Prop({ type: Date })
   holdExpiresAt?: Date;
@@ -223,6 +245,11 @@ BookingSchema.index({ serviceDate: 1 });
 BookingSchema.index({ customerId: 1, createdAt: -1 });
 // Capacity counting for availability.
 BookingSchema.index({ activitySlug: 1, optionId: 1, serviceDay: 1, status: 1 }, { sparse: true });
+BookingSchema.index(
+  { stockProductType: 1, stockProductRef: 1, stockVariantId: 1, serviceDay: 1, status: 1 },
+  { sparse: true },
+);
+BookingSchema.index({ serviceDay: 1, status: 1 }, { sparse: true });
 BookingSchema.index(
   { orderReference: 1, cartItemId: 1 },
   { unique: true, partialFilterExpression: { cartItemId: { $exists: true } } },

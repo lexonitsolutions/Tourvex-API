@@ -56,6 +56,28 @@ export interface ActivityBookingInput {
   holdExpiresAt: Date;
 }
 
+/** A confirmed booking created by staff from a holiday, cruise or event enquiry (offline payment). */
+export interface EnquiryBookingInput {
+  customerId: string;
+  source: 'holiday' | 'cruise' | 'event';
+  productRef: string;
+  variantId: string;
+  title: string;
+  /** Shown as the option name on the invoice; omitted for the `default` variant. */
+  optionName?: string;
+  serviceDay: string;
+  quantity: number;
+  adults?: number;
+  children?: number;
+  total: number;
+  currency: string;
+  paymentReference: string;
+  customer: CustomerDetails;
+  actor: { id: string; name: string };
+  eventText: string;
+  note?: string;
+}
+
 @Injectable()
 export class BookingsService {
   private readonly logger = new Logger(BookingsService.name);
@@ -161,6 +183,9 @@ export class BookingsService {
       serviceType: ServiceType.Activity,
       title: input.title,
       activitySlug: input.activitySlug,
+      stockProductType: 'activity',
+      stockProductRef: input.activitySlug,
+      stockVariantId: input.optionId,
       activityImage: input.image,
       activityLocation: input.location,
       optionId: input.optionId,
@@ -207,6 +232,59 @@ export class BookingsService {
       if (!existing) throw error;
       return existing;
     }
+  }
+
+  /**
+   * Creates a CONFIRMED booking for an enquiry that staff turned into a sale. Meant to run inside the caller's
+   * transaction (after taking the stock lock); the invoice and voucher follow after the commit via `afterConfirmed`.
+   */
+  async createEnquiryBooking(input: EnquiryBookingInput, session: ClientSession): Promise<Booking & { _id: Types.ObjectId }> {
+    const now = new Date();
+    const [created] = await this.bookings.create(
+      [
+        {
+          reference: `TVX-${now.getUTCFullYear()}-${randomBytes(4).toString('hex').toUpperCase()}`,
+          customerId: new Types.ObjectId(input.customerId),
+          serviceType: input.source,
+          title: input.title,
+          ...(input.optionName && { optionName: input.optionName }),
+          serviceDay: input.serviceDay,
+          serviceDate: new Date(`${input.serviceDay}T00:00:00.000Z`),
+          quantity: input.quantity,
+          ...(input.adults !== undefined && { adults: input.adults }),
+          ...(input.children !== undefined && { children: input.children }),
+          unitPrice: Math.round((input.total / input.quantity + Number.EPSILON) * 100) / 100,
+          subtotal: input.total,
+          discount: 0,
+          tax: 0,
+          total: input.total,
+          currency: input.currency,
+          refundable: false,
+          cancellationPolicy: 'Arranged with our team; contact us to change or cancel this booking.',
+          status: BookingStatus.Confirmed,
+          paymentReference: input.paymentReference,
+          confirmedAt: now,
+          customer: input.customer,
+          stockProductType: input.source,
+          stockProductRef: input.productRef,
+          stockVariantId: input.variantId,
+          events: [
+            {
+              type: 'confirmed_manually',
+              at: now,
+              actorId: new Types.ObjectId(input.actor.id),
+              actorName: input.actor.name,
+              text: input.eventText.slice(0, 500),
+            },
+          ],
+          ...(input.note && {
+            notes: [{ id: randomBytes(8).toString('hex'), at: now, authorId: new Types.ObjectId(input.actor.id), authorName: input.actor.name, text: input.note }],
+          }),
+        },
+      ],
+      { session },
+    );
+    return created.toObject();
   }
 
   /** Reference + status of each booking in an order (for the post-payment status poll). */

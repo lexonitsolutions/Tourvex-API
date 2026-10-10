@@ -1,10 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
 import type { ClientSession } from 'mongoose';
-import { Model, Types } from 'mongoose';
-import { Booking } from '../bookings/schemas/booking.schema';
-import { CartSession } from '../checkout/schemas/cart-session.schema';
-import { CapacityLock } from './schemas/capacity-lock.schema';
+import { StockService, type UsageOptions } from '../stock/stock.service';
 
 export interface CapacityKey {
   slug: string;
@@ -12,44 +8,35 @@ export interface CapacityKey {
   day: string;
 }
 
-const lockKey = ({ slug, optionId, day }: CapacityKey) => `${slug}|${optionId}|${day}`;
+const lockKeyOf = ({ slug, optionId, day }: CapacityKey) => ({
+  productType: 'activity' as const,
+  productRef: slug,
+  variantId: optionId,
+  day,
+});
 
 /**
- * Capacity already taken per service day for one activity option: quantities (adults + children)
- * in confirmed bookings, unexpired pending_payment bookings and unexpired open carts (holds).
+ * Activity-shaped door to the stock engine, kept for the checkout and the catalog. The derivation itself (what is
+ * sold, held and available) and the lock rows live in `StockService`, so activities and every other product type
+ * share one implementation.
  */
 @Injectable()
 export class ActivityCapacityService {
-  constructor(
-    @InjectModel(Booking.name) private readonly bookings: Model<Booking>,
-    @InjectModel(CartSession.name) private readonly carts: Model<CartSession>,
-    @InjectModel(CapacityLock.name) private readonly locks: Model<CapacityLock>,
-  ) {}
+  constructor(private readonly stock: StockService) {}
 
   /** Makes sure the lock rows exist. Run it BEFORE the transaction: creating them inside would race on the unique key. */
-  async ensureLocks(keys: CapacityKey[]): Promise<void> {
-    for (const key of new Set(keys.map(lockKey))) {
-      try {
-        await this.locks.updateOne({ key }, { $setOnInsert: { key, version: 0 } }, { upsert: true }).exec();
-      } catch (error) {
-        if ((error as { code?: number }).code !== 11000) throw error; // a concurrent request created it first
-      }
-    }
+  ensureLocks(keys: CapacityKey[]): Promise<void> {
+    return this.stock.ensureLocks(keys.map(lockKeyOf));
+  }
+
+  /** Takes the capacity locks inside a transaction (sorted, so two transactions never wait on each other in a circle). */
+  lock(keys: CapacityKey[], session: ClientSession): Promise<void> {
+    return this.stock.lock(keys.map(lockKeyOf), session);
   }
 
   /**
-   * Takes the capacity locks inside a transaction. Sorted, so two transactions never wait on each other in a circle.
-   * A concurrent transaction on the same day makes this one conflict and retry, and the retry sees its bookings.
-   */
-  async lock(keys: CapacityKey[], session: ClientSession): Promise<void> {
-    for (const key of [...new Set(keys.map(lockKey))].sort()) {
-      await this.locks.updateOne({ key }, { $inc: { version: 1 }, $set: { touchedAt: new Date() } }, { session }).exec();
-    }
-  }
-
-  /**
-   * `excludeCartId`: ignore one cart's own holds (it is the one being added to, modified or paid).
-   * Days are inclusive YYYY-MM-DD bounds. `options.excludeOrderReference` ignores one order's own bookings;
+   * Units taken per service day (sold + held) for one activity option in [fromDay, toDay].
+   * `excludeCartId`: ignore one cart's own holds. `options.excludeOrderReference` ignores one order's own bookings;
    * `options.session` reads inside a transaction.
    */
   async usage(
@@ -59,60 +46,16 @@ export class ActivityCapacityService {
     toDay: string,
     now: Date,
     excludeCartId?: string,
-    options: { excludeOrderReference?: string; session?: ClientSession } = {},
+    options: Pick<UsageOptions, 'excludeOrderReference' | 'session'> = {},
   ): Promise<Map<string, number>> {
-    const { excludeOrderReference, session } = options;
-    const [booked, held] = await Promise.all([
-      this.bookings
-        .aggregate<{ _id: string; qty: number }>([
-          {
-            $match: {
-              activitySlug: slug,
-              optionId,
-              serviceDay: { $gte: fromDay, $lte: toDay },
-              ...(excludeOrderReference && { orderReference: { $ne: excludeOrderReference } }),
-              $or: [
-                { status: 'confirmed' },
-                { status: 'pending_payment', holdExpiresAt: { $gt: now } },
-              ],
-            },
-          },
-          { $group: { _id: '$serviceDay', qty: { $sum: { $add: ['$adults', '$children'] } } } },
-        ])
-        .session(session ?? null)
-        .exec(),
-      this.carts
-        .aggregate<{ _id: string; qty: number }>([
-          {
-            $match: {
-              status: 'open',
-              expiresAt: { $gt: now },
-              ...(excludeCartId && { _id: { $ne: new Types.ObjectId(excludeCartId) } }),
-              items: {
-                $elemMatch: { activitySlug: slug, optionId, date: { $gte: fromDay, $lte: toDay } },
-              },
-            },
-          },
-          { $unwind: '$items' },
-          {
-            $match: {
-              'items.activitySlug': slug,
-              'items.optionId': optionId,
-              'items.date': { $gte: fromDay, $lte: toDay },
-            },
-          },
-          {
-            $group: {
-              _id: '$items.date',
-              qty: { $sum: { $add: ['$items.adults', '$items.children'] } },
-            },
-          },
-        ])
-        .session(session ?? null)
-        .exec(),
-    ]);
-    const usage = new Map<string, number>();
-    for (const row of [...booked, ...held]) usage.set(row._id, (usage.get(row._id) ?? 0) + row.qty);
-    return usage;
+    const usage = await this.stock.loadUsage([{ productType: 'activity', productRef: slug, variantId: optionId }], fromDay, toDay, now, {
+      ...options,
+      excludeCartId,
+    });
+    const result = new Map<string, number>();
+    for (const perDay of usage.values()) {
+      for (const [day, cell] of perDay) result.set(day, (result.get(day) ?? 0) + cell.sold + cell.held);
+    }
+    return result;
   }
 }

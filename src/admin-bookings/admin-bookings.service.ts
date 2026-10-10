@@ -32,6 +32,8 @@ import { Booking, BookingEventType, BookingStatus } from '../bookings/schemas/bo
 import { Refund } from '../bookings/schemas/refund.schema';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PaymentsService } from '../payments/payments.service';
+import { bookingStockView } from '../stock/stock.rules';
+import { StockService } from '../stock/stock.service';
 import { User } from '../users/schemas/user.schema';
 import { VouchersService } from '../vouchers/vouchers.service';
 import {
@@ -77,6 +79,7 @@ export class AdminBookingsService implements OnModuleInit, OnModuleDestroy {
     private readonly inventory: InventoryService,
     private readonly notifications: NotificationsService,
     private readonly transactions: TransactionService,
+    private readonly stock: StockService,
     config: ConfigService,
   ) {
     this.isTest = config.get<string>('NODE_ENV') === 'test';
@@ -386,6 +389,7 @@ export class AdminBookingsService implements OnModuleInit, OnModuleDestroy {
         paymentStatus: paymentStatusOf(booking),
       },
       cancellationPolicyResult: policy,
+      stock: bookingStockView(booking, now),
       refunds: refunds.map((r) => this.refundView(r)),
       voucher: voucher ? this.vouchers.toView(voucher) : null,
       invoice: invoice ? this.billing.toView(invoice) : null,
@@ -464,11 +468,13 @@ export class AdminBookingsService implements OnModuleInit, OnModuleDestroy {
     if (refundAmount > 0 && !hasPermission(actor.roles, 'bookings.refund')) {
       throw appError(403, 'REFUND_PERMISSION_REQUIRED', 'Cancelling with a refund needs the bookings.refund permission; cancel without a refund and let finance refund it');
     }
+    // A paid booking's units go back to stock only when it is cancelled before the cutoff; stored on the booking itself.
+    const stockPlan = await this.stock.cancellationPlan(booking, now);
     const flipped = await this.bookings
       .findOneAndUpdate(
         { _id: booking._id, status: booking.status },
         {
-          $set: { status: BookingStatus.Cancelled, cancelledAt: now },
+          $set: { status: BookingStatus.Cancelled, cancelledAt: now, ...(stockPlan && { stockReleased: stockPlan.stockReleased }) },
           $push: { events: { type: 'cancelled', at: now, actorId: new Types.ObjectId(actor.id), actorName: actor.email, text: dto.reason.slice(0, 500) } },
         },
         { returnDocument: 'after' },
@@ -486,6 +492,8 @@ export class AdminBookingsService implements OnModuleInit, OnModuleDestroy {
         this.logger.warn(`Stock release failed for ${booking.reference}: ${(error as Error).message}`);
       }
     }
+    if (stockPlan) await this.stock.afterCancellation(booking, stockPlan, { id: actor.id, email: actor.email }, now);
+    else await this.stock.refreshBookings([booking], now); // an unpaid hold was released
     await this.vouchers.voidForBooking(booking._id, 'Booking cancelled', { id: actor.id, name: actor.email });
 
     let refundError: string | null = null;
@@ -635,6 +643,12 @@ export class AdminBookingsService implements OnModuleInit, OnModuleDestroy {
     const fully = refundedAfterMinor >= totalMinor;
     const nextStatus = statusAfterRefund(booking.status, totalMinor, refundedAfterMinor);
     const now = new Date();
+    // A full refund of a paid, never cancelled booking also settles its units: back to stock before the cutoff, kept after it.
+    const stockPlan = nextStatus === BookingStatus.Refunded ? await this.stock.cancellationPlan(booking, now) : null;
+    const bookingChanges: Record<string, unknown> = {
+      ...(nextStatus !== booking.status && { status: nextStatus }),
+      ...(stockPlan && { stockReleased: stockPlan.stockReleased }),
+    };
 
     const settled = await this.transactions.run(async (session) => {
       const marked = await this.refunds
@@ -649,7 +663,7 @@ export class AdminBookingsService implements OnModuleInit, OnModuleDestroy {
         .updateOne(
           { _id: booking._id },
           {
-            ...(nextStatus !== booking.status && { $set: { status: nextStatus } }),
+            ...(Object.keys(bookingChanges).length > 0 && { $set: bookingChanges }),
             $push: {
               events: {
                 type: 'refunded' as BookingEventType,
@@ -666,6 +680,7 @@ export class AdminBookingsService implements OnModuleInit, OnModuleDestroy {
       return true;
     });
     if (!settled) return;
+    if (stockPlan) await this.stock.afterCancellation(booking, stockPlan, actor, now);
 
     if (fully) await this.vouchers.voidForBooking(booking._id, 'Booking refunded', { id: actor.id, name: actor.email });
     try {
@@ -781,6 +796,7 @@ export class AdminBookingsService implements OnModuleInit, OnModuleDestroy {
       .lean()
       .exec();
     if (!updated) throw appError(409, 'CONFLICT', 'The booking changed; reload and try again');
+    await this.stock.refreshBookings([booking, { ...booking, serviceDay: dto.date }], now);
     return this.afterChange(booking._id, actor, booking.status, { field: 'serviceDay', from: booking.serviceDay ?? null, to: dto.date });
   }
 

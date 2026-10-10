@@ -88,19 +88,32 @@ export function bookingDeadlineUtc(
   return new Date(reference.getTime() - (option.cutoffHours ?? 0) * HOUR_MS);
 }
 
+/**
+ * What the stock module resolved for one day: the effective capacity (date override > policy default > legacy
+ * option.dailyCapacity > unlimited = null) and whether the date or item is closed. Without it the option's own
+ * `dailyCapacity` is used, as before.
+ */
+export interface DayCapacity {
+  limit: number | null;
+  closed: boolean;
+}
+
 export function computeDayStatus(input: {
   date: string;
   option: OptionRules;
   now: Date;
   booked: number;
+  capacity?: DayCapacity;
 }): DayStatus {
   const { date, option, now, booked } = input;
+  const limit = input.capacity ? input.capacity.limit : (option.dailyCapacity ?? null);
   if (date < operatingToday(now)) return 'past';
   if (!option.operatingWeekdays.includes(weekdayOf(date)) || option.blackoutDates?.includes(date)) {
     return 'non_operational';
   }
   if (now.getTime() >= bookingDeadlineUtc(date, option).getTime()) return 'past';
-  if (option.dailyCapacity != null && option.dailyCapacity - booked <= 0) return 'sold_out';
+  if (input.capacity?.closed) return 'sold_out';
+  if (limit != null && limit - booked <= 0) return 'sold_out';
   return 'available';
 }
 
@@ -126,8 +139,10 @@ export function checkBookingRequest(input: {
   children: number;
   now: Date;
   booked: number;
+  capacity?: DayCapacity;
 }): BookingCheckFailure | null {
   const { option, date, adults, children, now, booked } = input;
+  const limit = input.capacity ? input.capacity.limit : (option.dailyCapacity ?? null);
   if (!isValidIsoDate(date)) {
     return { code: 'INVALID_DATE', message: 'date must be a valid YYYY-MM-DD date', status: 400 };
   }
@@ -146,7 +161,7 @@ export function checkBookingRequest(input: {
       status: 400,
     };
   }
-  const status = computeDayStatus({ date, option, now, booked });
+  const status = computeDayStatus({ date, option, now, booked, capacity: input.capacity });
   if (status !== 'available') {
     return {
       code: 'DATE_UNAVAILABLE',
@@ -154,7 +169,7 @@ export function checkBookingRequest(input: {
       status: 409,
     };
   }
-  if (option.dailyCapacity != null && option.dailyCapacity - booked < pax) {
+  if (limit != null && limit - booked < pax) {
     return {
       code: 'DATE_UNAVAILABLE',
       message: 'There is not enough availability for that number of travellers on this date',

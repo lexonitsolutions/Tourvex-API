@@ -36,7 +36,11 @@ const REQUIRED: Expectation[] = [
   { collection: 'promo_codes', keys: { code: 1 }, purpose: 'promo codes are unique' },
   { collection: 'users', keys: { email: 1 }, purpose: 'one account per e-mail address' },
   { collection: 'users', keys: { clerkUserId: 1 }, purpose: 'one account per Clerk user' },
-  { collection: 'capacity_locks', keys: { key: 1 }, purpose: 'one capacity lock per activity option and day' },
+  { collection: 'capacity_locks', keys: { key: 1 }, purpose: 'one capacity lock per stock item and day' },
+  { collection: 'stock_policies', keys: { productType: 1, productRef: 1, variantId: 1 }, purpose: 'one stock policy per item' },
+  { collection: 'stock_days', keys: { productType: 1, productRef: 1, variantId: 1, date: 1 }, purpose: 'one stock override per item and date' },
+  { collection: 'stock_alert_states', keys: { productType: 1, productRef: 1, variantId: 1, date: 1, state: 1 }, purpose: 'a stock alert is sent once per item, date and state' },
+  { collection: 'stock_movements', keys: { bookingReference: 1, type: 1 }, partial: true, purpose: 'the automatic ledger rows of a booking are written once' },
 ];
 
 const sameKeys = (a: Record<string, unknown>, b: Record<string, unknown>) => JSON.stringify(a) === JSON.stringify(b);

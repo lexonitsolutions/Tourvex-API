@@ -75,6 +75,18 @@ const MENU: MenuDefinition[] = [
       { id: 'catalog-visas', label: 'Visas', href: '/admin/catalog/visas', icon: 'visas', anyOf: ['catalog.read'] },
     ],
   },
+  {
+    id: 'inventory',
+    label: 'Inventory',
+    href: '/admin/inventory',
+    icon: 'inventory',
+    anyOf: ['stock.read'],
+    children: [
+      { id: 'inventory-stock', label: 'Stock', href: '/admin/inventory', icon: 'inventory', anyOf: ['stock.read'] },
+      { id: 'inventory-alerts', label: 'Low stock & sold out', href: '/admin/inventory/alerts', icon: 'inventory', anyOf: ['stock.read'] },
+      { id: 'inventory-movements', label: 'Movements', href: '/admin/inventory/movements', icon: 'inventory', anyOf: ['stock.read'] },
+    ],
+  },
   { id: 'content', label: 'Content', href: '/admin/content', icon: 'content', anyOf: ['cms.read'] },
   { id: 'staff', label: 'Staff', href: '/admin/staff', icon: 'users', anyOf: ['staff.read'] },
   { id: 'audit', label: 'Audit log', href: '/admin/audit', icon: 'shield', anyOf: ['audit.read'] },

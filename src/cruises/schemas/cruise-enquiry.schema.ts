@@ -52,8 +52,16 @@ export class CruiseEnquiry {
   @Prop({ type: Types.ObjectId })
   userId?: Types.ObjectId;
 
-  @Prop({ type: String, enum: ENQUIRY_STATUSES, default: 'new' })
+  /** `booked` is set only by the stock module when staff confirm the enquiry into a booking. */
+  @Prop({ type: String, enum: [...ENQUIRY_STATUSES, 'booked'], default: 'new' })
   status: string;
+
+  /** Booking created from this enquiry (stock module). */
+  @Prop({ type: String })
+  bookingReference?: string;
+
+  @Prop({ type: Date })
+  bookedAt?: Date;
 
   @Prop({ type: String, trim: true })
   note?: string;

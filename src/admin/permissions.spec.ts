@@ -54,6 +54,18 @@ describe('permissions map', () => {
     expect(hasPermission([Role.Content], 'bookings.read')).toBe(false);
   });
 
+  it('maps the stock permissions: operations and admins write, other staff roles read', () => {
+    for (const role of [Role.Operations, Role.Admin, Role.SuperAdmin]) {
+      expect(hasPermission([role], 'stock.read')).toBe(true);
+      expect(hasPermission([role], 'stock.write')).toBe(true);
+    }
+    for (const role of [Role.Content, Role.Sales, Role.Support, Role.Finance]) {
+      expect(hasPermission([role], 'stock.read')).toBe(true);
+      expect(hasPermission([role], 'stock.write')).toBe(false);
+    }
+    for (const role of [Role.Customer, Role.B2BOwner]) expect(permissionsForRoles([role])).not.toContain('stock.read');
+  });
+
   it('keeps audit, staff and settings away from non-admin staff roles', () => {
     for (const role of [Role.Sales, Role.Operations, Role.Finance, Role.Support, Role.Content]) {
       for (const permission of permissionsForRoles([role])) {
@@ -79,6 +91,24 @@ describe('permissions map', () => {
 });
 
 describe('buildMenu', () => {
+  it('adds the Inventory group for stock readers, between catalog and content', () => {
+    for (const role of [Role.Operations, Role.Content, Role.Sales, Role.Support, Role.Finance, Role.Admin, Role.SuperAdmin]) {
+      const menu = buildMenu(permissionsForRoles([role]));
+      const inventory = menu.find((item) => item.id === 'inventory');
+      expect(inventory).toMatchObject({ label: 'Inventory', href: '/admin/inventory' });
+      expect(inventory?.children).toEqual([
+        { id: 'inventory-stock', label: 'Stock', href: '/admin/inventory', icon: 'inventory' },
+        { id: 'inventory-alerts', label: 'Low stock & sold out', href: '/admin/inventory/alerts', icon: 'inventory' },
+        { id: 'inventory-movements', label: 'Movements', href: '/admin/inventory/movements', icon: 'inventory' },
+      ]);
+      const ids = menu.map((item) => item.id);
+      if (ids.includes('catalog')) expect(ids.indexOf('inventory')).toBeGreaterThan(ids.indexOf('catalog'));
+      if (ids.includes('content')) expect(ids.indexOf('inventory')).toBeLessThan(ids.indexOf('content'));
+    }
+    expect(buildMenu([]).map((item) => item.id)).not.toContain('inventory');
+    expect(buildMenu(['bookings.read']).map((item) => item.id)).not.toContain('inventory');
+  });
+
   it('shows only entries the permissions allow', () => {
     expect(buildMenu([]).map((item) => item.id)).toEqual([]);
     // Other modules append their own entries; assert on what matters for each role.

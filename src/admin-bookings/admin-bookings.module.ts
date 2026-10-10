@@ -9,6 +9,7 @@ import { BillingModule } from '../crm/billing/billing.module';
 import { InventoryModule } from '../crm/inventory/inventory.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { PaymentsModule } from '../payments/payments.module';
+import { StockModule } from '../stock/stock.module';
 import { User, UserSchema } from '../users/schemas/user.schema';
 import { VouchersModule } from '../vouchers/vouchers.module';
 import { AdminBookingsController } from './admin-bookings.controller';
@@ -24,6 +25,7 @@ import { AdminBookingsService } from './admin-bookings.service';
     CatalogModule,
     InventoryModule,
     NotificationsModule,
+    StockModule,
     MongooseModule.forFeature([
       { name: Booking.name, schema: BookingSchema },
       { name: Refund.name, schema: RefundSchema },

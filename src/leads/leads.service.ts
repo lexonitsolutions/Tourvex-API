@@ -53,6 +53,8 @@ export interface LeadView {
   reference: string;
   source: string;
   sourceRef: string;
+  /** Id of the originating enquiry document (holiday / cruise / event / visa enquiry), when there is one. */
+  sourceId: string | null;
   catalog: { type: string; slug: string; title: string | null; id: string | null } | null;
   name: string;
   email: string;
@@ -197,6 +199,30 @@ export class LeadsService {
         if (raced) return { id: raced._id.toString(), reference: raced.reference, created: false };
       }
       throw error;
+    }
+  }
+
+  /**
+   * Staff turned this enquiry into a booking: the lead is won. Best effort and idempotent (only an open lead moves),
+   * so it can never fail the booking.
+   */
+  async markWonFromEnquiry(source: string, sourceRef: string, text: string): Promise<void> {
+    try {
+      const now = new Date();
+      const lead = await this.leads
+        .findOne({ source, sourceRef: sourceRef.trim().toUpperCase(), status: { $in: OPEN_STATUSES } })
+        .select({ status: 1 })
+        .lean<Lead>()
+        .exec();
+      if (!lead) return;
+      const patch = statusPatch('won', undefined, now);
+      await this.write(
+        lead._id,
+        { ...patch, entries: [this.entry('status', undefined, { from: lead.status, to: 'won', text, at: now })] },
+        { status: lead.status },
+      );
+    } catch (error) {
+      this.logger.warn(`Could not mark the lead of ${source} ${sourceRef} won: ${(error as Error).message}`);
     }
   }
 
@@ -599,6 +625,7 @@ export class LeadsService {
       reference: doc.reference,
       source: doc.source,
       sourceRef: doc.sourceRef,
+      sourceId: doc.sourceId?.toString() ?? null,
       catalog: doc.catalog
         ? { type: doc.catalog.type, slug: doc.catalog.slug, title: doc.catalog.title ?? null, id: doc.catalog.id?.toString() ?? null }
         : null,

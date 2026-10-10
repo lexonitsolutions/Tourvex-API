@@ -5,6 +5,7 @@ import { Model } from 'mongoose';
 import { BookingsService } from '../bookings/bookings.service';
 import { TransactionService } from '../common/database/transaction.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { StockService } from '../stock/stock.service';
 import { CartSession } from './schemas/cart-session.schema';
 import { Order } from './schemas/order.schema';
 import { PromoCode } from './schemas/promo-code.schema';
@@ -30,6 +31,7 @@ export class OrdersService {
     private readonly bookings: BookingsService,
     private readonly notifications: NotificationsService,
     private readonly transactions: TransactionService,
+    private readonly stock: StockService,
   ) {}
 
   /**
@@ -91,6 +93,8 @@ export class OrdersService {
     }
 
     await this.bookings.finalizeConfirmed(outcome.flipped, outcome.settled);
+    // Ledger row + availability flags for the bookings that just turned paid (repeats of a webhook flip nothing).
+    await this.stock.onBookingsConfirmed(outcome.flipped);
     if (outcome.newlyPaid) {
       for (const booking of outcome.flipped) {
         await this.notifications.bookingConfirmed({ bookingReference: booking.reference, orderReference });
@@ -152,6 +156,8 @@ export class OrdersService {
       .exec();
     if (!released) return { released: false };
     await this.bookings.expireOrderBookings(orderReference);
+    // The held units are free again: refresh the products' sold-out / low-stock flags.
+    await this.stock.onOrderReleased(orderReference);
     return { released: true };
   }
 

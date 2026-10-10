@@ -4,3 +4,8 @@ import { HttpException } from '@nestjs/common';
 export function appError(status: number, code: string, message: string): HttpException {
   return new HttpException({ statusCode: status, code, message }, status);
 }
+
+/** Like `appError`, plus extra machine-readable fields in the body (e.g. the offending `date` or the `available` units). */
+export function appErrorWith(status: number, code: string, message: string, extra: Record<string, unknown>): HttpException {
+  return new HttpException({ statusCode: status, code, message, ...extra }, status);
+}

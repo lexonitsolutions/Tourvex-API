@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { LeadsService } from '../leads/leads.service';
+import { publicStock } from '../stock/stock.rules';
 import { fromCruiseEnquiry } from '../leads/leads.rules';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, PipelineStage, Types } from 'mongoose';
@@ -98,9 +99,14 @@ export class CruisesService {
     return publicVisibilityFilter(this.showSamples);
   }
 
+  /** Visible AND still bookable somewhere: what public lists show. Detail pages and enquiries use `visible`, so a sold-out product still opens. */
+  private get listable() {
+    return { ...this.visible, 'stockStatus.soldOut': { $ne: true } };
+  }
+
   /** Visible cruises that still have at least one upcoming departure. */
   private upcomingVisible(now: Date) {
-    return { ...this.visible, departures: { $gte: startOfTodayUtc(now) } };
+    return { ...this.listable, departures: { $gte: startOfTodayUtc(now) } };
   }
 
   home() {
@@ -223,7 +229,7 @@ export class CruisesService {
 
   private async listUncached(query: ListCruisesDto, admin = false) {
     const now = new Date();
-    const base = admin ? adminCatalogFilter(query) : this.visible;
+    const base = admin ? adminCatalogFilter(query) : this.listable;
     const filter = buildCruiseFilter(query, base, now, !admin);
     const { addFields, sort } = buildCruiseSort(query.sort, now);
     const skip = (query.page - 1) * query.limit;
@@ -281,7 +287,7 @@ export class CruisesService {
       .exec();
 
     return {
-      cruise: this.toCruise(doc, now, !this.isProduction),
+      cruise: { ...this.toCruise(doc, now, !this.isProduction), stock: publicStock(doc.stockStatus) },
       related: related.map((r) => this.toCard(r, now)),
       currency,
     };
@@ -587,6 +593,7 @@ export class CruisesService {
       userId: doc.userId ? String(doc.userId) : null,
       status: doc.status,
       note: doc.note ?? null,
+      bookingReference: doc.bookingReference ?? null,
       consentAt: new Date(doc.consentAt).toISOString(),
       createdAt: new Date(doc.createdAt).toISOString(),
       updatedAt: new Date(doc.updatedAt).toISOString(),

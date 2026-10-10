@@ -3,6 +3,7 @@ import { adminCatalogFilter, toAdminRecord } from '../common/catalog/admin-catal
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { LeadsService } from '../leads/leads.service';
+import { publicStock } from '../stock/stock.rules';
 import { fromHolidayEnquiry } from '../leads/leads.rules';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, PipelineStage, Types } from 'mongoose';
@@ -78,6 +79,11 @@ export class HolidaysService {
     return publicVisibilityFilter(this.showSamples);
   }
 
+  /** Visible AND still bookable somewhere: what public lists show. Detail pages and enquiries use `visible`, so a sold-out product still opens. */
+  private get listable() {
+    return { ...this.visible, 'stockStatus.soldOut': { $ne: true } };
+  }
+
   home() {
     return this.cache.wrap('holidays', 'home', 60, () => this.homeUncached());
   }
@@ -118,7 +124,7 @@ export class HolidaysService {
   }
 
   private async listUncached(query: ListHolidaysDto, admin = false) {
-    const base = admin ? adminCatalogFilter(query) : this.visible;
+    const base = admin ? adminCatalogFilter(query) : this.listable;
     const filter = buildHolidayFilter(query, base);
     const { addFields, sort } = buildHolidaySort(query.sort);
     const skip = (query.page - 1) * query.limit;
@@ -160,7 +166,7 @@ export class HolidaysService {
       .find(
         {
           _id: { $ne: doc._id },
-          ...this.visible,
+          ...this.listable,
           $or: [{ destinations: { $in: doc.destinations } }, { themes: { $in: doc.themes } }],
         },
         CARD_FIND_PROJECTION,
@@ -171,7 +177,7 @@ export class HolidaysService {
       .exec();
 
     return {
-      package: this.toPackage(doc, !this.isProduction),
+      package: { ...this.toPackage(doc, !this.isProduction), stock: publicStock(doc.stockStatus) },
       related: related.map((r) => this.toCard(r)),
       currency,
     };
@@ -286,7 +292,7 @@ export class HolidaysService {
   private async cities() {
     const rows = await this.holidays
       .aggregate<Lean>([
-        { $match: this.visible },
+        { $match: this.listable },
         { $sort: { popularity: -1, _id: 1 } },
         { $unwind: '$destinations' },
         {
@@ -314,7 +320,7 @@ export class HolidaysService {
   private async countriesSummary() {
     const rows = await this.holidays
       .aggregate<Lean>([
-        { $match: this.visible },
+        { $match: this.listable },
         { $sort: { popularity: -1, _id: 1 } },
         {
           $group: {
@@ -348,7 +354,7 @@ export class HolidaysService {
 
     const groups = await this.holidays
       .aggregate<{ _id: string; items: Lean[] }>([
-        { $match: { ...this.visible, collections: { $in: slugs } } },
+        { $match: { ...this.listable, collections: { $in: slugs } } },
         { $sort: { popularity: -1, _id: 1 } },
         { $project: CARD_AGG_PROJECTION },
         { $unwind: '$collections' },
@@ -507,6 +513,7 @@ export class HolidaysService {
       userId: doc.userId ? String(doc.userId) : null,
       status: doc.status,
       note: doc.note ?? null,
+      bookingReference: doc.bookingReference ?? null,
       consentAt: doc.consentAt ? new Date(doc.consentAt).toISOString() : null,
       createdAt: new Date(doc.createdAt).toISOString(),
       updatedAt: new Date(doc.updatedAt).toISOString(),

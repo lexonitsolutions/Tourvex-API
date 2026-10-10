@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
+import { StockStatus, StockStatusSchema } from '../../stock/schemas/stock-status.schema';
 
 export type ActivityDocument = HydratedDocument<Activity>;
 
@@ -211,6 +212,10 @@ export class Activity {
   /** True when the detail text/options are ORIGINAL SAMPLE content (hidden in production by default). */
   @Prop({ type: Boolean })
   detailsAreSample?: boolean;
+
+  /** Denormalised availability flags (see StockService); absent until the first refresh. */
+  @Prop({ type: StockStatusSchema })
+  stockStatus?: StockStatus;
 
   createdAt: Date;
   updatedAt: Date;

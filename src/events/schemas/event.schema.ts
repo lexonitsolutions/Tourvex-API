@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
+import { StockStatus, StockStatusSchema } from '../../stock/schemas/stock-status.schema';
 import { EVENT_CATEGORIES } from '../events.utils';
 
 export type EventDocument = HydratedDocument<Event>;
@@ -127,6 +128,10 @@ export class Event {
 
   @Prop({ type: Boolean, default: false })
   isSample: boolean;
+
+  /** Denormalised availability flags (see StockService); absent until the first refresh. */
+  @Prop({ type: StockStatusSchema })
+  stockStatus?: StockStatus;
 
   createdAt: Date;
   updatedAt: Date;

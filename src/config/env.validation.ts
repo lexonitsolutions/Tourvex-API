@@ -145,6 +145,17 @@ class EnvironmentVariables {
   @IsBooleanString()
   PARTNERS_ALLOW_SAMPLES?: string;
 
+  /**
+   * Comma-separated e-mail addresses that receive low-stock and sold-out alerts. When empty, the support e-mail from the
+   * admin settings is used; when that is empty too, no alert e-mail is sent (alerts still appear in the admin).
+   */
+  @IsOptional()
+  @IsString()
+  @Matches(/^\s*$|^\s*[^\s@,]+@[^\s@,]+\.[^\s@,]+(\s*,\s*[^\s@,]+@[^\s@,]+\.[^\s@,]+)*\s*,?\s*$/, {
+    message: 'STOCK_ALERT_EMAILS must be comma-separated e-mail addresses',
+  })
+  STOCK_ALERT_EMAILS?: string;
+
   /** Exchange-rate source; must return { result:"success", base_code:"AED", rates, time_last_update_unix }. */
   @IsUrl({ require_tld: false, require_protocol: true })
   FX_API_URL = 'https://open.er-api.com/v6/latest/AED';

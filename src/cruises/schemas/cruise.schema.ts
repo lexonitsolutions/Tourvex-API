@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
+import { StockStatus, StockStatusSchema } from '../../stock/schemas/stock-status.schema';
 import { ITINERARY_TYPES } from '../cruises.utils';
 
 export type CruiseDocument = HydratedDocument<Cruise>;
@@ -136,6 +137,10 @@ export class Cruise {
 
   @Prop({ type: Boolean, default: false })
   isSample: boolean;
+
+  /** Denormalised availability flags (see StockService); absent until the first refresh. */
+  @Prop({ type: StockStatusSchema })
+  stockStatus?: StockStatus;
 
   createdAt: Date;
   updatedAt: Date;

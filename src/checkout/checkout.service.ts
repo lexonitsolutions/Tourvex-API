@@ -138,13 +138,14 @@ export class CheckoutService implements OnModuleInit, OnModuleDestroy {
     const now = new Date();
     const cart = await this.loadForEdit(user.sub, now);
     const same = cart?.items.find((i) => this.sameKey(i, dto));
+    const itemId = same?.itemId ?? randomUUID();
     if (cart && !same && cart.items.length >= MAX_CART_ITEMS) {
       throw appError(409, 'CART_FULL', `A cart can hold at most ${MAX_CART_ITEMS} activities`);
     }
-    const prepared = await this.catalog.prepareItem(dto.activitySlug, dto, now, cart?._id.toString());
+    const prepared = await this.catalog.prepareItem(dto.activitySlug, { ...dto, itemId }, now, cart?._id.toString());
     // Adding the same option + date again REPLACES that item (travellers are set, not summed), so
     // a repeated "Proceed to pay" click is idempotent. Pick-up and additional details are kept.
-    const item = this.buildItem(prepared, dto, same?.itemId ?? randomUUID(), same);
+    const item = this.buildItem(prepared, dto, itemId, same);
 
     if (!cart) {
       const created = new this.carts({
@@ -173,7 +174,7 @@ export class CheckoutService implements OnModuleInit, OnModuleDestroy {
     if (cart.items.some((i) => i.itemId !== itemId && this.sameKey(i, dto))) {
       throw appError(409, 'DUPLICATE_ITEM', 'Another item in your cart already has this option and date');
     }
-    const prepared = await this.catalog.prepareItem(dto.activitySlug, dto, now, cart._id.toString());
+    const prepared = await this.catalog.prepareItem(dto.activitySlug, { ...dto, itemId }, now, cart._id.toString());
     const item = this.buildItem(prepared, dto, itemId, current);
     const items = cart.toObject().items.map((i) => (i.itemId === itemId ? item : i));
     return this.commitItems(cart, items, now, display);
@@ -302,7 +303,7 @@ export class CheckoutService implements OnModuleInit, OnModuleDestroy {
       for (const old of cart.toObject().items) {
         const prepared = await this.catalog.prepareItem(
           old.activitySlug,
-          { optionId: old.optionId, date: old.date, adults: old.adults, children: old.children },
+          { itemId: old.itemId, optionId: old.optionId, date: old.date, adults: old.adults, children: old.children },
           now,
           cart._id.toString(),
         );
@@ -483,7 +484,7 @@ export class CheckoutService implements OnModuleInit, OnModuleDestroy {
         const orderReference = order?.orderReference ?? generateOrderReference();
 
         await this.catalog.assertCapacity(
-          items.map((item) => ({ activitySlug: item.activitySlug, optionId: item.optionId, date: item.date, adults: item.adults, children: item.children })),
+          items.map((item) => ({ itemId: item.itemId, activitySlug: item.activitySlug, optionId: item.optionId, date: item.date, adults: item.adults, children: item.children })),
           { orderReference, session, now },
         );
 
@@ -765,12 +766,20 @@ export class CheckoutService implements OnModuleInit, OnModuleDestroy {
     };
   }
 
-  private sessionView(cart: PlainCart, display?: string) {
+  private async sessionView(cart: PlainCart, display?: string) {
+    // While the cart is open each line is re-checked against live stock; once it is paying, its own order holds the places.
+    const now = new Date();
+    const checks =
+      cart.status === 'open'
+        ? await Promise.all(
+            cart.items.map((item) => this.catalog.lineAvailability(item.activitySlug, item, now, cart._id.toString())),
+          )
+        : [];
     return {
       id: cart._id.toString(),
       status: cart.status,
       expiresAt: cart.expiresAt.toISOString(),
-      items: cart.items.map((item) => this.itemView(item)),
+      items: cart.items.map((item, index) => ({ ...this.itemView(item), available: checks[index]?.available ?? true, ...(checks[index]?.remaining !== undefined && { remaining: checks[index].remaining }) })),
       pricing: this.pricingView(cart, cart.promoCode, display),
       ...(cart.customer && { customer: cart.customer }),
       ...(cart.orderReference && { orderReference: cart.orderReference }),

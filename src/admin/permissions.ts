@@ -15,6 +15,7 @@ export const PERMISSION_MODULES = [
   'customers',
   'partners',
   'catalog',
+  'stock',
   'blog',
   'promos',
   'reviews',
@@ -61,6 +62,8 @@ export const ALL_PERMISSIONS = [
   'catalog.write',
   'catalog.delete',
   'catalog.export',
+  'stock.read',
+  'stock.write',
   'blog.read',
   'blog.write',
   'blog.delete',
@@ -122,6 +125,7 @@ const ROLE_PERMISSIONS: Partial<Record<Role, readonly Permission[]>> = {
     'bookings.read',
     'partners.read',
     'promos.read',
+    'stock.read',
   ],
   [Role.Operations]: [
     'bookings.read',
@@ -131,9 +135,11 @@ const ROLE_PERMISSIONS: Partial<Record<Role, readonly Permission[]>> = {
     ...all('vouchers'),
     'catalog.read',
     'enquiries.read',
+    ...all('stock'),
   ],
   [Role.Finance]: [
     'bookings.read',
+    'stock.read',
     ...all('finance'),
     ...all('invoices'),
     'bookings.refund',
@@ -147,6 +153,7 @@ const ROLE_PERMISSIONS: Partial<Record<Role, readonly Permission[]>> = {
     'customers.read',
     ...all('reviews'),
     'enquiries.read',
+    'stock.read',
   ],
   [Role.Content]: [
     ...all('catalog'),
@@ -155,6 +162,7 @@ const ROLE_PERMISSIONS: Partial<Record<Role, readonly Permission[]>> = {
     ...all('reviews'),
     ...all('cms'),
     'dashboard.read',
+    'stock.read',
   ],
 };
 

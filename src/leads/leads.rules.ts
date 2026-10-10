@@ -267,6 +267,7 @@ export function mapLegacyStatus(status: string | undefined): {
 } {
   if (status === 'closed') return { status: 'lost', lostReason: 'other' };
   if (status === 'lost') return { status: 'lost', lostReason: 'other' };
+  if (status === 'booked') return { status: 'won' };
   if (status && (LEAD_STATUSES as readonly string[]).includes(status)) return { status: status as LeadStatus };
   return { status: 'new' };
 }

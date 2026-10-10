@@ -3,7 +3,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { appError } from '../common/app-error';
+import { appError, appErrorWith } from '../common/app-error';
 import {
   CURRENCY,
   fromMinor,
@@ -22,13 +22,14 @@ import {
   computeDayStatus,
   daysOfMonth,
   freeCancellationUntil,
+  isValidIsoDate,
   isValidMonth,
   pickShortcuts,
   validateOptions,
   type DayStatus,
 } from './activity-booking.utils';
 import type { ClientSession } from 'mongoose';
-import { ActivityCapacityService } from './activity-capacity.service';
+import { StockService } from '../stock/stock.service';
 import { AvailabilityQueryDto, QuoteDto } from './dto/activity-booking.dto';
 import { ListActivitiesDto } from './dto/list-activities.dto';
 import { UpdateActivityDetailsDto } from './dto/update-activity-details.dto';
@@ -70,6 +71,8 @@ export interface PreparedItem {
 }
 
 export interface ItemInput {
+  /** Cart item the request is about; echoed in the 409 body so the UI can mark the right line. */
+  itemId?: string;
   optionId: string;
   date: string;
   adults: number;
@@ -83,7 +86,7 @@ export class CatalogService {
 
   constructor(
     @InjectModel(Activity.name) private readonly activities: Model<Activity>,
-    private readonly capacity: ActivityCapacityService,
+    private readonly stock: StockService,
     private readonly reviews: ReviewsService,
     private readonly currency: CurrencyService,
     private readonly settings: SettingsService,
@@ -100,7 +103,8 @@ export class CatalogService {
   }
 
   private async listActivitiesUncached(query: ListActivitiesDto) {
-    const filter: Record<string, any> = { published: true };
+    // Sold-out activities (no bookable date left) are hidden from the public list; admin lists are never filtered.
+    const filter: Record<string, any> = { published: true, 'stockStatus.soldOut': { $ne: true } };
     if (query.search) filter.$text = { $search: query.search };
     if (query.destination) filter.destinations = query.destination;
     if (query.category) filter.categories = query.category;
@@ -117,7 +121,13 @@ export class CatalogService {
       this.activities.countDocuments(filter),
     ]);
     return {
-      items: items.map((item) => this.localize(item, query.locale)),
+      items: items.map(({ stockStatus, ...item }) => ({
+        ...this.localize(item, query.locale),
+        stock: {
+          lowStock: Boolean(stockStatus?.lowStock),
+          remaining: stockStatus?.lowStock ? (stockStatus.lowestRemaining ?? null) : null,
+        },
+      })),
       pagination: { page: query.page, limit: query.limit, total, pages: Math.ceil(total / query.limit) },
       currency: query.currency,
     };
@@ -128,9 +138,10 @@ export class CatalogService {
   }
 
   private async findBySlugUncached(slug: string, locale = 'en') {
-    const item = await this.loadVisible(slug);
+    const { stockStatus, ...item } = await this.loadVisible(slug);
     const rating = await this.reviews.summaryFor(slug);
-    return { ...this.localize(item, locale), rating };
+    // A sold-out activity still opens (with its stock block saying so); only the list hides it.
+    return { ...this.localize(item, locale), rating, stock: this.stock.publicStock(stockStatus) };
   }
 
   async upsertMany(items: Array<Record<string, unknown>>) {
@@ -188,20 +199,31 @@ export class CatalogService {
     if (!isValidMonth(query.month)) throw appError(400, 'INVALID_MONTH', 'month must be YYYY-MM');
     const { option } = await this.loadOption(slug, query.optionId);
     const dates = daysOfMonth(query.month);
-    const usage = await this.capacity.usage(slug, option.id, dates[0], dates[dates.length - 1], now);
+    const infos = await this.stock.capacityInfo(
+      { productType: 'activity', productRef: slug, variantId: option.id },
+      option.dailyCapacity ?? null,
+      dates[0],
+      dates[dates.length - 1],
+      now,
+    );
     const days = dates.map((date) => {
+      const info = infos.get(date)!;
       const status: DayStatus = computeDayStatus({
         date,
         option,
         now,
-        booked: usage.get(date) ?? 0,
+        booked: info.booked,
+        capacity: { limit: info.limit, closed: info.closed },
       });
+      const remaining = info.limit === null ? null : Math.max(0, info.limit - info.booked);
       return {
         date,
         status,
         ...(status === 'available' && {
           adultPrice: option.adultPrice,
           childPrice: option.childPrice ?? null,
+          // "Only 3 left" for the date picker.
+          ...(remaining !== null && remaining <= info.threshold && { remaining }),
         }),
       };
     });
@@ -256,23 +278,17 @@ export class CatalogService {
     excludeCartId?: string,
   ): Promise<PreparedItem> {
     const { activity, option } = await this.loadOption(slug, input.optionId);
-    const usage = await this.capacity.usage(
-      slug,
-      option.id,
-      input.date,
-      input.date,
-      now,
-      excludeCartId,
-    );
+    const info = await this.capacityOf(slug, option, input.date, now, { excludeCartId });
     const failure = checkBookingRequest({
       option,
       date: input.date,
       adults: input.adults,
       children: input.children,
       now,
-      booked: usage.get(input.date) ?? 0,
+      booked: info?.booked ?? 0,
+      capacity: info && { limit: info.limit, closed: info.closed },
     });
-    if (failure) throw appError(failure.status, failure.code, failure.message);
+    if (failure) throw this.failure(failure, input.itemId, info);
 
     const { lines, subtotalMinor } = priceTravellers({
       adultPrice: option.adultPrice,
@@ -300,13 +316,13 @@ export class CatalogService {
    * competing checkout that committed first makes this one fail with DATE_UNAVAILABLE instead of overselling.
    */
   async assertCapacity(
-    items: { activitySlug: string; optionId: string; date: string; adults: number; children: number }[],
+    items: { itemId?: string; activitySlug: string; optionId: string; date: string; adults: number; children: number }[],
     context: { orderReference: string; session: ClientSession; now?: Date },
   ): Promise<void> {
     const now = context.now ?? new Date();
     for (const item of items) {
       const { option } = await this.loadOption(item.activitySlug, item.optionId);
-      const usage = await this.capacity.usage(item.activitySlug, option.id, item.date, item.date, now, undefined, {
+      const info = await this.capacityOf(item.activitySlug, option, item.date, now, {
         excludeOrderReference: context.orderReference,
         session: context.session,
       });
@@ -316,10 +332,67 @@ export class CatalogService {
         adults: item.adults,
         children: item.children,
         now,
-        booked: usage.get(item.date) ?? 0,
+        booked: info?.booked ?? 0,
+        capacity: info && { limit: info.limit, closed: info.closed },
       });
-      if (failure) throw appError(failure.status, failure.code, failure.message);
+      if (failure) throw this.failure(failure, item.itemId, info);
     }
+  }
+
+  /** 409 body of an unavailable date: `itemId` (the failing cart line) and `available` (units left, when known). */
+  private failure(
+    failure: { status: number; code: string; message: string },
+    itemId: string | undefined,
+    info?: { limit: number | null; closed: boolean; booked: number },
+  ) {
+    if (failure.code !== 'DATE_UNAVAILABLE') return appError(failure.status, failure.code, failure.message);
+    const available = !info ? undefined : info.closed ? 0 : info.limit === null ? undefined : Math.max(0, info.limit - info.booked);
+    return appErrorWith(failure.status, failure.code, failure.message, {
+      ...(itemId && { itemId }),
+      ...(available !== undefined && { available }),
+    });
+  }
+
+  /** Is a cart line still bookable as requested, and how many places are left (when capacity is limited). Never throws. */
+  async lineAvailability(slug: string, input: ItemInput, now: Date, excludeCartId?: string): Promise<{ available: boolean; remaining?: number }> {
+    try {
+      const { option } = await this.loadOption(slug, input.optionId);
+      const info = await this.capacityOf(slug, option, input.date, now, { excludeCartId });
+      const failure = checkBookingRequest({
+        option,
+        date: input.date,
+        adults: input.adults,
+        children: input.children,
+        now,
+        booked: info?.booked ?? 0,
+        capacity: info && { limit: info.limit, closed: info.closed },
+      });
+      const remaining = !info ? undefined : info.closed ? 0 : info.limit === null ? undefined : Math.max(0, info.limit - info.booked);
+      return { available: !failure, ...(remaining !== undefined && { remaining }) };
+    } catch {
+      return { available: false };
+    }
+  }
+
+  /** Effective capacity of one option on one day (date override > policy default > legacy dailyCapacity > unlimited). */
+  private async capacityOf(
+    slug: string,
+    option: ActivityOption,
+    date: string,
+    now: Date,
+    options: { excludeCartId?: string; excludeOrderReference?: string; session?: ClientSession },
+  ) {
+    // An invalid date is rejected by checkBookingRequest with INVALID_DATE; there is nothing to count for it.
+    if (!isValidIsoDate(date)) return undefined;
+    const infos = await this.stock.capacityInfo(
+      { productType: 'activity', productRef: slug, variantId: option.id },
+      option.dailyCapacity ?? null,
+      date,
+      date,
+      now,
+      options,
+    );
+    return infos.get(date);
   }
 
   /** Bookable activity + option, or 404. Sample details hidden in production make options unbookable. */

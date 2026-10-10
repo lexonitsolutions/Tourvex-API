@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectConnection } from '@nestjs/mongoose';
 import type { Connection } from 'mongoose';
 import { appError } from '../common/app-error';
+import { StockAdminService } from '../stock/stock-admin.service';
 import { UsersService } from '../users/users.service';
 import { buildMenu, type MenuItem } from './menu';
 import { isStaff, permissionsForRoles, STAFF_ROLES } from './permissions';
@@ -17,6 +18,8 @@ export interface AdminSummary {
   enquiries: { open: number };
   tickets: { open: number };
   customers: { new7d: number };
+  /** Items running low / sold out over the next 30 days (same figures as GET /admin/stock/summary). */
+  stock: { lowStock: number; soldOut: number };
 }
 
 const DAY_MS = 86_400_000;
@@ -25,6 +28,7 @@ const DAY_MS = 86_400_000;
 export class AdminService {
   constructor(
     private readonly users: UsersService,
+    private readonly stock: StockAdminService,
     @InjectConnection() private readonly connection: Connection,
   ) {}
 
@@ -45,6 +49,16 @@ export class AdminService {
       permissions,
       menu: buildMenu(permissions),
     };
+  }
+
+  /** Never fails the dashboard: stock counts fall back to zero. */
+  private async stockCounts(now: Date) {
+    try {
+      const { lowStock, soldOut } = await this.stock.summary(now);
+      return { lowStock, soldOut };
+    } catch {
+      return { lowStock: 0, soldOut: 0 };
+    }
   }
 
   /** Small dashboard counts from existing collections (0 for modules not built yet). */
@@ -71,6 +85,7 @@ export class AdminService {
       enquiries: { open: leads },
       tickets: { open: tickets },
       customers: { new7d: customers },
+      stock: await this.stockCounts(now),
     };
   }
 }
