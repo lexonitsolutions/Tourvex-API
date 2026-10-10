@@ -76,7 +76,7 @@ export class SettingsService implements OnModuleInit {
     switch (group) {
       case 'general':
         return {
-          siteName: 'Tourvex',
+          siteName: 'Karnish Tourism',
           supportEmail: '',
           supportPhone: '',
           address: '',
@@ -93,7 +93,7 @@ export class SettingsService implements OnModuleInit {
         };
       case 'notifications':
         return {
-          senderName: 'Tourvex',
+          senderName: 'Karnish Tourism',
           templates: {
             bookingConfirmation: {
               subject: 'Your booking {{bookingRef}} is confirmed',

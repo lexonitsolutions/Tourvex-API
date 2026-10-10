@@ -26,7 +26,7 @@ async function run() {
       $set: { status: UserStatus.Active },
       $addToSet: { roles: Role.SuperAdmin },
       $setOnInsert: {
-        firstName: 'Tourvex',
+        firstName: 'Karnish Tourism',
         lastName: 'Administrator',
         email,
         preferredLocale: 'en',

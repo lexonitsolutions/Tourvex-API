@@ -53,7 +53,7 @@ describe('validateSettings', () => {
 
   it('validates general: email, phone and social URLs', () => {
     const ok = {
-      siteName: 'Tourvex',
+      siteName: 'Karnish Tourism',
       supportEmail: 'help@tourvex.com',
       supportPhone: '+971 4 123 4567',
       address: 'Dubai',
@@ -70,7 +70,7 @@ describe('validateSettings', () => {
 
   const template = { subject: 'Booking {{bookingRef}}', body: 'Hi {{ customerName }}, see {{voucherUrl}}' };
   const notifications = {
-    senderName: 'Tourvex',
+    senderName: 'Karnish Tourism',
     templates: { bookingConfirmation: template, voucher: template, cancellation: template },
   };
 
@@ -177,7 +177,7 @@ describe('SettingsService', () => {
     const { service } = build({
       general: {
         values: {
-          siteName: 'Tourvex',
+          siteName: 'Karnish Tourism',
           supportEmail: 'help@tourvex.com',
           supportPhone: '+971',
           address: 'secret street',
@@ -187,7 +187,7 @@ describe('SettingsService', () => {
     });
     const view = await service.getPublic();
     expect(view).toEqual({
-      siteName: 'Tourvex',
+      siteName: 'Karnish Tourism',
       supportEmail: 'help@tourvex.com',
       supportPhone: '+971',
       socials: { instagram: 'https://instagram.com/x' },

@@ -23,7 +23,7 @@ async function bootstrap() {
   app.enableShutdownHooks();
 
   const swaggerConfig = new DocumentBuilder()
-    .setTitle('Tourvex API')
+    .setTitle('Karnish Tourism API')
     .setDescription('Travel booking, supplier, CRM inventory, billing, and partner API')
     .setVersion('1.0')
     .addBearerAuth({
