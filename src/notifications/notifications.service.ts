@@ -17,11 +17,28 @@ export interface StockAlertNotice {
   lines: string[];
 }
 
+/** An invoice or credit note e-mailed to the buyer with the PDF attached. */
+export interface InvoiceEmailNotice {
+  to: string;
+  kind: 'invoice' | 'credit_note';
+  number: string;
+  customerName: string;
+  bookingReference?: string;
+  relatedInvoiceNumber?: string;
+  currency: string;
+  total: number;
+  sellerName: string;
+  supportEmail?: string;
+  pdf: { filename: string; content: Buffer };
+}
+
 /** Delivery channel (e-mail, WhatsApp, ...). Implement this and rebind NOTIFICATION_PROVIDER. */
 export interface NotificationProvider {
   sendBookingConfirmation(notice: BookingConfirmationNotice): Promise<void>;
   sendTicketNotice?(notice: TicketNotice): Promise<void>;
   sendStockAlert?(notice: StockAlertNotice): Promise<void>;
+  /** Present only on providers that can really send e-mail (SMTP); throws when the delivery fails. */
+  sendInvoiceEmail?(notice: InvoiceEmailNotice): Promise<{ messageId?: string }>;
 }
 
 export const NOTIFICATION_PROVIDER = Symbol('NOTIFICATION_PROVIDER');
@@ -71,6 +88,17 @@ export class NotificationsService {
     } catch {
       this.logger.warn('Stock alert notice failed');
     }
+  }
+
+  /** True when a real e-mail provider (SMTP) is configured. */
+  get emailEnabled(): boolean {
+    return typeof this.provider.sendInvoiceEmail === 'function';
+  }
+
+  /** Sends an invoice / credit note e-mail. Throws on failure: the caller records the status and retries. */
+  async sendInvoiceEmail(notice: InvoiceEmailNotice): Promise<{ messageId?: string }> {
+    if (!this.provider.sendInvoiceEmail) throw new Error('E-mail is not configured');
+    return this.provider.sendInvoiceEmail(notice);
   }
 
   /** Best effort: a failing provider must never fail a payment confirmation. */

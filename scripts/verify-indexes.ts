@@ -41,6 +41,13 @@ const REQUIRED: Expectation[] = [
   { collection: 'stock_days', keys: { productType: 1, productRef: 1, variantId: 1, date: 1 }, purpose: 'one stock override per item and date' },
   { collection: 'stock_alert_states', keys: { productType: 1, productRef: 1, variantId: 1, date: 1, state: 1 }, purpose: 'a stock alert is sent once per item, date and state' },
   { collection: 'stock_movements', keys: { bookingReference: 1, type: 1 }, partial: true, purpose: 'the automatic ledger rows of a booking are written once' },
+  { collection: 'tax_regimes', keys: { country: 1 }, partial: true, purpose: 'one active tax regime per country' },
+  { collection: 'seller_registrations', keys: { country: 1 }, partial: true, purpose: 'one active invoice issuer per country (a number series never has two issuers)' },
+  { collection: 'seller_registrations', keys: { isDefault: 1 }, partial: true, purpose: 'exactly one default invoice issuer' },
+  { collection: 'tax_settings', keys: { key: 1 }, purpose: 'a single tax settings document' },
+  { collection: 'suppliers', keys: { nameKey: 1 }, purpose: 'supplier names are unique (case-insensitive)' },
+  { collection: 'purchases', keys: { number: 1 }, purpose: 'purchase numbers are never reused' },
+  { collection: 'purchases', keys: { supplierId: 1, supplierInvoiceNumber: 1 }, partial: true, purpose: 'a supplier invoice number is recorded once per supplier' },
 ];
 
 const sameKeys = (a: Record<string, unknown>, b: Record<string, unknown>) => JSON.stringify(a) === JSON.stringify(b);

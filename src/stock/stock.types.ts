@@ -18,6 +18,7 @@ export type EnquirySource = (typeof ENQUIRY_SOURCES)[number];
 export const MOVEMENT_TYPES = [
   'set_default',
   'set_day',
+  'set_cost',
   'adjust_add',
   'adjust_remove',
   'close',

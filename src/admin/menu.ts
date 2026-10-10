@@ -87,6 +87,17 @@ const MENU: MenuDefinition[] = [
       { id: 'inventory-movements', label: 'Movements', href: '/admin/inventory/movements', icon: 'inventory', anyOf: ['stock.read'] },
     ],
   },
+  {
+    id: 'purchasing',
+    label: 'Purchasing',
+    href: '/admin/purchasing',
+    icon: 'purchasing',
+    anyOf: ['purchasing.read'],
+    children: [
+      { id: 'purchasing-purchases', label: 'Purchases', href: '/admin/purchasing', icon: 'purchasing', anyOf: ['purchasing.read'] },
+      { id: 'purchasing-suppliers', label: 'Suppliers', href: '/admin/purchasing/suppliers', icon: 'purchasing', anyOf: ['purchasing.read'] },
+    ],
+  },
   { id: 'content', label: 'Content', href: '/admin/content', icon: 'content', anyOf: ['cms.read'] },
   { id: 'staff', label: 'Staff', href: '/admin/staff', icon: 'users', anyOf: ['staff.read'] },
   { id: 'audit', label: 'Audit log', href: '/admin/audit', icon: 'shield', anyOf: ['audit.read'] },

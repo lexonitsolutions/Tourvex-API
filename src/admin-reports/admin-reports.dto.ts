@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsIn, IsOptional, Matches } from 'class-validator';
+import { IsIn, IsMongoId, IsOptional, Matches } from 'class-validator';
 import { RANGE_PRESETS } from './reports-rules';
 
 const DAY_OR_ISO = /^\d{4}-\d{2}-\d{2}(T[\d:.]+(Z|[+-]\d{2}:?\d{2})?)?$/;
@@ -19,4 +19,24 @@ export class ReportRangeDto {
   @IsOptional()
   @Matches(DAY_OR_ISO, { message: 'to must be YYYY-MM-DD or an ISO date' })
   to?: string;
+}
+
+export const MARGIN_GROUPS = ['product', 'day', 'month', 'type'] as const;
+export const MARGIN_PRODUCT_TYPES = ['activity', 'holiday', 'cruise', 'event', 'visa', 'transfer', 'hotel', 'flight'] as const;
+
+export class MarginReportDto extends ReportRangeDto {
+  @ApiPropertyOptional({ enum: MARGIN_GROUPS, default: 'product' })
+  @IsOptional()
+  @IsIn([...MARGIN_GROUPS])
+  groupBy?: (typeof MARGIN_GROUPS)[number];
+
+  @ApiPropertyOptional({ enum: MARGIN_PRODUCT_TYPES, description: 'Only bookings of this service type' })
+  @IsOptional()
+  @IsIn([...MARGIN_PRODUCT_TYPES])
+  productType?: (typeof MARGIN_PRODUCT_TYPES)[number];
+
+  @ApiPropertyOptional({ description: 'Only bookings of items that were purchased from this supplier (received or paid purchase lines)' })
+  @IsOptional()
+  @IsMongoId()
+  supplierId?: string;
 }

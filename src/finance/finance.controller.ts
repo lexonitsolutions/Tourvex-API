@@ -12,12 +12,14 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
 import { RequirePermission } from '../admin/require-permission.decorator';
 import { Audited, AuditInterceptor, setAuditContext } from '../audit/audited';
 import { appError } from '../common/app-error';
 import { streamCsv } from '../common/csv/csv';
 import { ListInvoicesDto } from '../crm/billing/billing.dto';
+import { EmailInvoiceDto } from '../tax/tax.dto';
 import { BillingService } from '../crm/billing/billing.service';
 import { ParseObjectIdPipe } from '../holidays/parse-object-id.pipe';
 import { FinanceRangeDto, GenerateInvoiceDto } from './finance.dto';
@@ -170,6 +172,19 @@ export class AdminInvoicesController {
   @Header('Cache-Control', 'no-store')
   async get(@Param('id', ParseObjectIdPipe) id: string) {
     return this.billing.toView(await this.billing.getById(id));
+  }
+
+  @Post(':id/email')
+  @HttpCode(200)
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @RequirePermission('invoices.write')
+  @Audited('invoice', 'invoice.email')
+  @Header('Cache-Control', 'no-store')
+  @ApiOperation({ summary: 'E-mail the invoice or credit note PDF (defaults to the buyer e-mail); 409 EMAIL_NOT_CONFIGURED without SMTP' })
+  async email(@Param('id', ParseObjectIdPipe) id: string, @Body() dto: EmailInvoiceDto, @Req() request: Request) {
+    const result = await this.billing.emailInvoice(id, dto.to);
+    setAuditContext(request, { entityId: id, summary: `E-mailed document ${id}: ${result.status}`, changes: [] });
+    return result;
   }
 
   @Get(':id/pdf')

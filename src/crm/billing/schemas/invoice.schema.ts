@@ -47,8 +47,161 @@ export class InvoiceSeller {
 
   @Prop({ type: String, default: '' })
   phone: string;
+
+  // Added with the tax module; absent on older documents.
+  @Prop({ type: String })
+  sellerId?: string;
+
+  @Prop({ type: String })
+  registrationLabel?: string;
+
+  @Prop({ type: String })
+  registrationNumber?: string;
+
+  @Prop({ type: String })
+  country?: string;
+
+  @Prop({ type: String })
+  state?: string;
+
+  @Prop({ type: String })
+  stateCode?: string;
+
+  @Prop({ type: String })
+  website?: string;
+
+  @Prop({ type: String })
+  bankDetails?: string;
 }
 export const InvoiceSellerSchema = SchemaFactory.createForClass(InvoiceSeller);
+
+@Schema({ _id: false })
+export class InvoiceTaxComponent {
+  @Prop({ type: String, required: true })
+  code: string;
+
+  @Prop({ type: String, required: true })
+  label: string;
+
+  @Prop({ type: Number, required: true })
+  percent: number;
+
+  @Prop({ type: Number, required: true })
+  taxableAmount: number;
+
+  @Prop({ type: Number, required: true })
+  taxAmount: number;
+}
+export const InvoiceTaxComponentSchema = SchemaFactory.createForClass(InvoiceTaxComponent);
+
+/** Tax snapshot of a document (exposed as `taxInfo`: the legacy numeric `tax` field keeps the tax amount). */
+@Schema({ _id: false })
+export class InvoiceTaxInfo {
+  @Prop({ type: String })
+  regimeId?: string;
+
+  @Prop({ type: String, required: true })
+  country: string;
+
+  @Prop({ type: String, required: true })
+  taxName: string;
+
+  @Prop({ type: String, required: true })
+  model: string;
+
+  @Prop({ type: String, required: true })
+  rateCode: string;
+
+  @Prop({ type: Number, required: true })
+  percent: number;
+
+  @Prop({ type: [InvoiceTaxComponentSchema], default: [] })
+  components: InvoiceTaxComponent[];
+
+  @Prop({ type: Object })
+  placeOfSupply?: { country: string; state?: string; stateCode?: string };
+
+  @Prop({ type: Object })
+  serviceCode?: { label: string; value: string; description?: string };
+
+  @Prop({ type: Boolean, default: false })
+  reverseCharge: boolean;
+
+  @Prop({ type: Boolean, default: false })
+  pricesIncludeTax: boolean;
+
+  /** Layout hints frozen at issue, so the PDF never changes when the regime is edited later. */
+  @Prop({ type: String })
+  qr?: string;
+
+  @Prop({ type: String })
+  registrationLabel?: string;
+
+  @Prop({ type: String })
+  notes?: string;
+}
+export const InvoiceTaxInfoSchema = SchemaFactory.createForClass(InvoiceTaxInfo);
+
+@Schema({ _id: false })
+export class InvoiceBuyer {
+  @Prop({ type: String, default: '' })
+  name: string;
+
+  @Prop({ type: String, default: '' })
+  email: string;
+
+  @Prop({ type: String })
+  phone?: string;
+
+  @Prop({ type: String })
+  address?: string;
+
+  @Prop({ type: String })
+  country?: string;
+
+  @Prop({ type: String })
+  state?: string;
+
+  @Prop({ type: String })
+  stateCode?: string;
+
+  @Prop({ type: String })
+  registrationNumber?: string;
+}
+export const InvoiceBuyerSchema = SchemaFactory.createForClass(InvoiceBuyer);
+
+export const EMAIL_STATUSES = ['pending', 'sent', 'failed', 'skipped'] as const;
+export type EmailStatus = (typeof EMAIL_STATUSES)[number];
+
+@Schema({ _id: false })
+export class InvoiceEmail {
+  @Prop({ type: String, enum: EMAIL_STATUSES, default: 'pending' })
+  status: EmailStatus;
+
+  @Prop({ type: String })
+  to?: string;
+
+  @Prop({ type: Date })
+  lastSentAt?: Date;
+
+  @Prop({ type: Number, default: 0 })
+  attempts: number;
+
+  @Prop({ type: String })
+  lastError?: string;
+
+  @Prop({ type: String })
+  messageId?: string;
+
+  /** The retry sweep leaves a failed e-mail alone until this instant (backoff). */
+  @Prop({ type: Date })
+  nextAttemptAt?: Date;
+
+  /** Held while a send is in progress, so two processes never send the same e-mail at once. */
+  @Prop({ type: Date })
+  lockedUntil?: Date;
+}
+export const InvoiceEmailSchema = SchemaFactory.createForClass(InvoiceEmail);
 
 /**
  * Invoices (kind invoice, number INV-YYYY-000001) and credit notes (kind credit_note,
@@ -117,6 +270,19 @@ export class Invoice {
   @Prop({ type: Date })
   issuedAt?: Date;
 
+  // Tax module snapshot. All optional: legacy documents lack them and render as before.
+  @Prop({ type: String })
+  title?: string;
+
+  @Prop({ type: InvoiceTaxInfoSchema })
+  taxInfo?: InvoiceTaxInfo;
+
+  @Prop({ type: InvoiceBuyerSchema })
+  buyer?: InvoiceBuyer;
+
+  @Prop({ type: InvoiceEmailSchema })
+  email?: InvoiceEmail;
+
   // Credit notes only.
   @Prop({ type: Types.ObjectId, ref: 'Invoice' })
   relatedInvoiceId?: Types.ObjectId;
@@ -140,3 +306,7 @@ InvoiceSchema.index({ createdAt: -1 });
 // by the partial index, so the service also looks for them before inserting.
 InvoiceSchema.index({ bookingId: 1, kind: 1 }, { unique: true, partialFilterExpression: { kind: 'invoice' } });
 InvoiceSchema.index({ refundId: 1 }, { unique: true, partialFilterExpression: { refundId: { $exists: true } } });
+// Admin list sort, the regime/seller "in use" checks and the e-mail retry sweep.
+InvoiceSchema.index({ 'taxInfo.regimeId': 1 }, { sparse: true });
+InvoiceSchema.index({ 'seller.sellerId': 1 }, { sparse: true });
+InvoiceSchema.index({ 'email.status': 1, 'email.nextAttemptAt': 1 }, { sparse: true });

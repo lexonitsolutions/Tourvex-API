@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
+import { ClientSession, Model, Types } from 'mongoose';
 import { listItem } from '../admin-bookings/booking-view';
 import { Booking, BookingStatus } from '../bookings/schemas/booking.schema';
 import { addDays, operatingToday } from '../catalog/activity-booking.utils';
@@ -37,6 +37,9 @@ import {
   type ItemKey,
   type ItemStatus,
 } from './stock.types';
+
+/** What a per-date capacity edit needs (`PUT /items/:id/days` body and the purchasing receive / void). */
+export type DayEdit = Pick<UpdateStockDaysDto, 'from' | 'to' | 'weekdays' | 'mode' | 'capacity' | 'closed' | 'note' | 'reason'>;
 
 export interface StockActor {
   id: string;
@@ -246,6 +249,10 @@ export class StockAdminService {
         ? [{ actorId: new Types.ObjectId(query.actor) }]
         : [{ actorEmail: new RegExp(escapeRegex(query.actor), 'i') }];
     }
+    if (query.purchaseNumber) {
+      const byPurchase = { $or: [{ 'meta.purchaseNumber': query.purchaseNumber }, { reason: new RegExp(`^Purchase ${escapeRegex(query.purchaseNumber)}`) }] };
+      filter.$and = [byPurchase];
+    }
     if (query.from || query.to) {
       filter.at = {
         ...(query.from && { $gte: new Date(`${query.from}T00:00:00.000+04:00`) }),
@@ -398,108 +405,126 @@ export class StockAdminService {
     }
 
     await this.stock.ensureLocks(dates.map((day) => ({ ...key, day })));
+
+    await this.transactions.run((session) => this.applyDaysInSession(session, key, variant, dto, dates, actor, now));
+
+    await this.stock.refreshProducts([this.ref(key)], now);
+    const { days } = await this.days(variant, dto.from, dto.to, now);
+    return { updated: dates.length, days };
+  }
+
+  /**
+   * The body of `PUT /items/:id/days`, to run INSIDE a transaction (the caller has already called `ensureLocks` for
+   * these dates and validated the range). Takes the capacity locks, applies the edit to every date, writes the ledger
+   * rows (`meta` is merged into each row) and throws `STOCK_BELOW_COMMITTED` when a date would drop below its
+   * committed units. Purchasing reuses it so receiving or voiding a purchase is exactly an add / remove edit.
+   */
+  async applyDaysInSession(
+    session: ClientSession,
+    key: ItemKey,
+    variant: VariantSource,
+    dto: DayEdit,
+    dates: string[],
+    actor: StockActor,
+    now: Date,
+    meta?: Record<string, unknown>,
+  ): Promise<void> {
+    await this.stock.lock(dates.map((day) => ({ ...key, day })), session);
     const first = dates[0];
     const last = dates[dates.length - 1];
+    const [infos, existing, policy] = await Promise.all([
+      this.stock.capacityInfo(key, variant.legacyCapacity, first, last, now, { session }),
+      this.stock.dayDocs.find({ ...key, date: { $in: dates } }).session(session).lean().exec(),
+      this.stock.policies.findOne(key).session(session).lean<StockPolicy>().exec(),
+    ]);
+    const current = new Map(existing.map((doc) => [doc.date, doc]));
+    const ops: Record<string, unknown>[] = [];
+    const rows: MovementInput[] = [];
+    const summarise = dates.length > RANGED_LEDGER_SUMMARY_DAYS;
+    const title = itemTitle(variant);
+    const capacityType = dto.mode === 'add' ? 'adjust_add' : dto.mode === 'remove' ? 'adjust_remove' : 'set_day';
 
-    await this.transactions.run(async (session) => {
-      await this.stock.lock(dates.map((day) => ({ ...key, day })), session);
-      const [infos, existing, policy] = await Promise.all([
-        this.stock.capacityInfo(key, variant.legacyCapacity, first, last, now, { session }),
-        this.stock.dayDocs.find({ ...key, date: { $in: dates } }).session(session).lean().exec(),
-        this.stock.policies.findOne(key).session(session).lean<StockPolicy>().exec(),
-      ]);
-      const current = new Map(existing.map((doc) => [doc.date, doc]));
-      const ops: Record<string, unknown>[] = [];
-      const rows: MovementInput[] = [];
-      const summarise = dates.length > RANGED_LEDGER_SUMMARY_DAYS;
-      const title = itemTitle(variant);
-      const capacityType = dto.mode === 'add' ? 'adjust_add' : dto.mode === 'remove' ? 'adjust_remove' : 'set_day';
+    for (const date of dates) {
+      const info = infos.get(date)!;
+      const doc = current.get(date);
+      const fallback = effectiveCapacity({ defaultCapacity: policy?.defaultCapacity ?? null, legacyCapacity: variant.legacyCapacity }).capacity;
+      let capacity: number | null;
+      let closed: boolean;
+      let note: string;
 
-      for (const date of dates) {
-        const info = infos.get(date)!;
-        const doc = current.get(date);
-        const fallback = effectiveCapacity({ defaultCapacity: policy?.defaultCapacity ?? null, legacyCapacity: variant.legacyCapacity }).capacity;
-        let capacity: number | null;
-        let closed: boolean;
-        let note: string;
-
-        if (dto.mode === 'clear') {
-          capacity = null;
-          closed = false;
-          note = '';
-        } else {
-          if ((dto.mode === 'add' || dto.mode === 'remove') && info.limit === null) {
-            throw appError(409, 'UNLIMITED_ITEM', 'This item has no capacity set, so there is nothing to add to or remove from. Set a capacity first');
-          }
-          capacity =
-            dto.capacity === undefined
-              ? (doc?.capacity ?? null)
-              : applyCapacityEdit(dto.mode, info.limit, dto.capacity);
-          closed = dto.closed ?? doc?.closed ?? false;
-          note = dto.note ?? doc?.note ?? '';
+      if (dto.mode === 'clear') {
+        capacity = null;
+        closed = false;
+        note = '';
+      } else {
+        if ((dto.mode === 'add' || dto.mode === 'remove') && info.limit === null) {
+          throw appError(409, 'UNLIMITED_ITEM', 'This item has no capacity set, so there is nothing to add to or remove from. Set a capacity first');
         }
-
-        const newEffective = capacity ?? fallback;
-        if (newEffective !== null && newEffective < info.booked) {
-          throw appErrorWith(
-            409,
-            'STOCK_BELOW_COMMITTED',
-            `${info.booked} units are already committed on ${date}, more than the new capacity of ${newEffective}`,
-            { date, committed: info.booked, capacity: newEffective },
-          );
-        }
-
-        const empty = capacity === null && !closed && !note;
-        ops.push(
-          empty
-            ? { deleteOne: { filter: { ...key, date } } }
-            : { updateOne: { filter: { ...key, date }, update: { $set: { capacity, closed, note } }, upsert: true } },
-        );
-
-        if (!summarise) {
-          if (newEffective !== info.limit) {
-            rows.push({
-              actor,
-              key,
-              title,
-              type: capacityType,
-              date,
-              before: info.limit,
-              after: newEffective,
-              delta: typeof newEffective === 'number' && typeof info.limit === 'number' ? newEffective - info.limit : null,
-              reason: dto.mode === 'clear' ? dto.reason || 'Date override cleared' : (dto.reason ?? ''),
-            });
-          }
-          const wasClosed = doc?.closed ?? false;
-          if (closed !== wasClosed) rows.push({ actor, key, title, type: closed ? 'close' : 'open', date, reason: dto.reason ?? '' });
-        }
+        capacity =
+          dto.capacity === undefined
+            ? (doc?.capacity ?? null)
+            : applyCapacityEdit(dto.mode, info.limit, dto.capacity);
+        closed = dto.closed ?? doc?.closed ?? false;
+        note = dto.note ?? doc?.note ?? '';
       }
 
-      if (summarise) {
-        const meta = { from: dto.from, to: dto.to, days: dates.length, mode: dto.mode, ...(dto.weekdays?.length && { weekdays: dto.weekdays }) };
-        if (dto.mode === 'clear' || dto.capacity !== undefined) {
+      const newEffective = capacity ?? fallback;
+      if (newEffective !== null && newEffective < info.booked) {
+        throw appErrorWith(
+          409,
+          'STOCK_BELOW_COMMITTED',
+          `${info.booked} units are already committed on ${date}, more than the new capacity of ${newEffective}`,
+          { date, committed: info.booked, capacity: newEffective },
+        );
+      }
+
+      const empty = capacity === null && !closed && !note;
+      ops.push(
+        empty
+          ? { deleteOne: { filter: { ...key, date } } }
+          : { updateOne: { filter: { ...key, date }, update: { $set: { capacity, closed, note } }, upsert: true } },
+      );
+
+      if (!summarise) {
+        if (newEffective !== info.limit) {
           rows.push({
             actor,
             key,
             title,
             type: capacityType,
-            before: null,
-            after: dto.mode === 'set' ? (dto.capacity ?? null) : null,
-            delta: dto.mode === 'add' ? dto.capacity : dto.mode === 'remove' ? -(dto.capacity ?? 0) : null,
-            reason: dto.reason ?? (dto.mode === 'clear' ? 'Date overrides cleared' : ''),
-            meta,
+            date,
+            before: info.limit,
+            after: newEffective,
+            delta: typeof newEffective === 'number' && typeof info.limit === 'number' ? newEffective - info.limit : null,
+            reason: dto.mode === 'clear' ? dto.reason || 'Date override cleared' : (dto.reason ?? ''),
+            ...(meta && { meta }),
           });
         }
-        if (dto.closed !== undefined) rows.push({ actor, key, title, type: dto.closed ? 'close' : 'open', reason: dto.reason ?? '', meta });
+        const wasClosed = doc?.closed ?? false;
+        if (closed !== wasClosed) rows.push({ actor, key, title, type: closed ? 'close' : 'open', date, reason: dto.reason ?? '', ...(meta && { meta }) });
       }
+    }
 
-      await this.stock.dayDocs.bulkWrite(ops as any, { session });
-      await this.stock.recordMovements(rows, session);
-    });
+    if (summarise) {
+      const rangeMeta = { ...meta, from: dto.from, to: dto.to, days: dates.length, mode: dto.mode, ...(dto.weekdays?.length && { weekdays: dto.weekdays }) };
+      if (dto.mode === 'clear' || dto.capacity !== undefined) {
+        rows.push({
+          actor,
+          key,
+          title,
+          type: capacityType,
+          before: null,
+          after: dto.mode === 'set' ? (dto.capacity ?? null) : null,
+          delta: dto.mode === 'add' ? dto.capacity : dto.mode === 'remove' ? -(dto.capacity ?? 0) : null,
+          reason: dto.reason ?? (dto.mode === 'clear' ? 'Date overrides cleared' : ''),
+          meta: rangeMeta,
+        });
+      }
+      if (dto.closed !== undefined) rows.push({ actor, key, title, type: dto.closed ? 'close' : 'open', reason: dto.reason ?? '', meta: rangeMeta });
+    }
 
-    await this.stock.refreshProducts([this.ref(key)], now);
-    const { days } = await this.days(variant, dto.from, dto.to, now);
-    return { updated: dates.length, days };
+    await this.stock.dayDocs.bulkWrite(ops as any, { session });
+    await this.stock.recordMovements(rows, session);
   }
 
   /** `POST /items`: a manual item (yacht, transfer, hotel, custom). */

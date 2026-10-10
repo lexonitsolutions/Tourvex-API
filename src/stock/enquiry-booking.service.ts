@@ -15,6 +15,9 @@ import { HolidayEnquiry } from '../holidays/schemas/holiday-enquiry.schema';
 import { Lead } from '../leads/lead.schema';
 import { LeadsService } from '../leads/leads.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { bookingTaxFields } from '../tax/tax-snapshot';
+import { TaxRuleError, fromMinor, inclusiveBreakdown, toMinor } from '../tax/tax.rules';
+import { TaxService } from '../tax/tax.service';
 import { User, UserStatus } from '../users/schemas/user.schema';
 import { EnquiryBookingDto } from './dto/stock.dto';
 import { StockService } from './stock.service';
@@ -55,6 +58,7 @@ export class EnquiryBookingService {
     private readonly leads: LeadsService,
     private readonly notifications: NotificationsService,
     private readonly transactions: TransactionService,
+    private readonly tax: TaxService,
   ) {}
 
   private model(source: EnquirySource): Model<any> {
@@ -141,6 +145,24 @@ export class EnquiryBookingService {
       throw appError(409, 'DATE_UNAVAILABLE', 'This product does not run on the selected date');
     }
 
+    // The total staff entered is what the customer pays (tax inclusive): the tax is extracted from it, never added on top.
+    const override = dto.tax && Object.values(dto.tax).some(Boolean) ? { ...dto.tax, placeOfSupplyState: dto.tax.placeOfSupplyState, placeOfSupplyStateCode: dto.tax.placeOfSupplyStateCode } : undefined;
+    let determination;
+    try {
+      determination = await this.tax.determine({
+        serviceCountry: await this.tax.countryForProduct(dto.source, enquiry.slug),
+        customerState: dto.buyer?.state,
+        customerStateCode: dto.buyer?.stateCode,
+        override,
+      });
+    } catch (error) {
+      if (error instanceof TaxRuleError) throw appError(400, error.code, error.message);
+      throw error;
+    }
+    const taxDetermination = { ...determination, pricesIncludeTax: true };
+    const breakdown = inclusiveBreakdown(toMinor(dto.totalAmount), taxDetermination);
+    const buyerGiven = dto.buyer && Object.values(dto.buyer).some(Boolean) ? dto.buyer : undefined;
+
     const customerId = await this.ensureCustomer(enquiry);
     await this.stock.ensureLocks([{ ...key, day: dto.serviceDay }]);
 
@@ -187,6 +209,24 @@ export class EnquiryBookingService {
           actor: { id: actor.id, name: actor.email },
           eventText: `Enquiry ${fresh.reference} confirmed. Payment: ${dto.paymentMode}${dto.paymentReference ? ` (${dto.paymentReference})` : ''}`,
           note: dto.note,
+          net: fromMinor(breakdown.netMinor),
+          taxAmount: fromMinor(breakdown.taxMinor),
+          taxSnapshot: bookingTaxFields(taxDetermination, breakdown.netMinor, breakdown.taxMinor),
+          ...(override || buyerGiven?.registrationNumber
+            ? {
+                taxOverride: {
+                  ...(override?.country && { country: override.country }),
+                  ...(override?.rateCode && { rateCode: override.rateCode }),
+                  ...(override?.placeOfSupplyState && { placeOfSupplyState: override.placeOfSupplyState }),
+                  ...(override?.placeOfSupplyStateCode && { placeOfSupplyStateCode: override.placeOfSupplyStateCode }),
+                  ...(buyerGiven?.registrationNumber && { buyerRegistrationNumber: buyerGiven.registrationNumber }),
+                  reason: 'Chosen by staff when confirming the enquiry',
+                  by: actor.email,
+                  at: now,
+                },
+              }
+            : {}),
+          ...(buyerGiven && { invoiceBuyer: buyerGiven }),
         },
         session,
       );
@@ -220,6 +260,13 @@ export class EnquiryBookingService {
         enquiryReference: enquiry.reference,
       },
       invoiceNumber: invoice?.invoiceNumber ?? null,
+      tax: {
+        country: taxDetermination.country,
+        taxName: taxDetermination.taxName,
+        percent: taxDetermination.percent,
+        rateCode: taxDetermination.rateCode,
+        components: taxDetermination.components,
+      },
     };
   }
 }

@@ -160,6 +160,46 @@ describe('priceCart', () => {
   });
 });
 
+describe('priceCart with a tax rate per line', () => {
+  it('taxes each line with its own percent and still sums exactly', () => {
+    const result = priceCart(
+      [
+        { slug: 'dubai', subtotalMinor: 10_000, taxPercent: 5 },
+        { slug: 'kerala', subtotalMinor: 9_999, taxPercent: 18 },
+        { slug: 'zero', subtotalMinor: 5_000, taxPercent: 0 },
+      ],
+      null,
+      99,
+    );
+    expect(result.items.map((i) => i.taxMinor)).toEqual([500, 1_800, 0]);
+    expect(result.taxMinor).toBe(2_300);
+    expect(result.totalMinor).toBe(10_000 + 9_999 + 5_000 + 2_300);
+    expect(result.items.reduce((s, i) => s + i.totalMinor, 0)).toBe(result.totalMinor);
+  });
+
+  it('falls back to the cart-wide percent for lines without one', () => {
+    const result = priceCart([{ slug: 'a', subtotalMinor: 10_000 }, { slug: 'b', subtotalMinor: 10_000, taxPercent: 12 }], null, 5);
+    expect(result.items.map((i) => i.taxMinor)).toEqual([500, 1_200]);
+  });
+
+  it('taxes the discounted amount of each line at its own rate', () => {
+    const result = priceCart(
+      [{ slug: 'a', subtotalMinor: 30_000, taxPercent: 5 }, { slug: 'b', subtotalMinor: 10_000, taxPercent: 18 }],
+      { type: 'percent', value: 10 },
+      0,
+    );
+    expect(result.items.map((i) => i.taxMinor)).toEqual([1_350, 1_620]);
+    expect(result.totalMinor).toBe(27_000 + 9_000 + 2_970);
+  });
+
+  it('extracts tax from tax-inclusive lines without growing the total', () => {
+    const result = priceCart([{ slug: 'a', subtotalMinor: 10_500, taxPercent: 5, taxInclusive: true }], null, 0);
+    expect(result).toMatchObject({ taxMinor: 500, totalMinor: 10_500 });
+    const odd = priceCart([{ slug: 'a', subtotalMinor: 10_000, taxPercent: 5, taxInclusive: true }], null, 0);
+    expect(odd).toMatchObject({ taxMinor: 476, totalMinor: 10_000 });
+  });
+});
+
 describe('holds', () => {
   it('expires hold minutes after now and counts only while in the future', () => {
     const now = new Date('2026-10-04T10:00:00.000Z');

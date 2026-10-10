@@ -33,7 +33,9 @@ import { Refund } from '../bookings/schemas/refund.schema';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PaymentsService } from '../payments/payments.service';
 import { bookingStockView } from '../stock/stock.rules';
-import { StockService } from '../stock/stock.service';
+import { bookingStockKey, StockService } from '../stock/stock.service';
+import { formatItemId } from '../stock/stock.types';
+import { bookingFinancials, taxOf } from '../admin-reports/margin-rules';
 import { User } from '../users/schemas/user.schema';
 import { VouchersService } from '../vouchers/vouchers.service';
 import {
@@ -338,6 +340,18 @@ export class AdminBookingsService implements OnModuleInit, OnModuleDestroy {
     return booking;
   }
 
+  /** Id ("type:ref:variant") of the stock item a booking took units from; null for bookings that never touch stock. */
+  private stockItemId(booking: Parameters<typeof bookingStockKey>[0]): string | null {
+    const key = bookingStockKey(booking);
+    return key ? formatItemId(key) : null;
+  }
+
+  /** Revenue ex-tax, tax, cost and margin (finance.read only); see admin-reports/margin-rules.ts. */
+  private financials(booking: { total: number; refundedAmount?: number; taxComponents?: Array<{ taxAmount?: number }>; cost?: { total: number } | null }, invoiceTax?: number | null) {
+    const tax = taxOf({ total: booking.total, taxComponents: booking.taxComponents, invoiceTax });
+    return bookingFinancials({ total: booking.total, tax, refundedAmount: booking.refundedAmount, cost: booking.cost?.total ?? null });
+  }
+
   async get(id: string, actor: Actor, now = new Date()) {
     const booking = await this.load(id);
     const [user, refunds, voucher, invoice, creditNotes, order] = await Promise.all([
@@ -390,8 +404,34 @@ export class AdminBookingsService implements OnModuleInit, OnModuleDestroy {
       },
       cancellationPolicyResult: policy,
       stock: bookingStockView(booking, now),
+      stockItemId: this.stockItemId(booking),
+      ...(can('finance.read') && { financials: this.financials(booking, invoice?.tax) }),
       refunds: refunds.map((r) => this.refundView(r)),
       voucher: voucher ? this.vouchers.toView(voucher) : null,
+      taxInfo: booking.taxCountry
+        ? {
+            country: booking.taxCountry,
+            taxName: booking.taxName ?? 'VAT',
+            model: booking.taxModel ?? 'single',
+            rateCode: booking.taxRateCode ?? null,
+            percent: booking.taxPercent ?? 0,
+            components: (booking.taxComponents ?? []).map((c) => ({ code: c.code, label: c.label, percent: c.percent, taxAmount: c.taxAmount })),
+            placeOfSupply: booking.taxPlaceOfSupply ?? null,
+            serviceCode: booking.taxServiceCode ?? null,
+            fallback: Boolean(booking.taxFallback),
+            zeroRated: (booking.taxPercent ?? 0) === 0,
+            override: booking.taxOverride
+              ? {
+                  country: booking.taxOverride.country,
+                  rateCode: booking.taxOverride.rateCode,
+                  placeOfSupplyState: booking.taxOverride.placeOfSupplyState,
+                  buyerRegistrationNumber: booking.taxOverride.buyerRegistrationNumber,
+                  by: booking.taxOverride.by,
+                  at: booking.taxOverride.at,
+                }
+              : null,
+          }
+        : null,
       invoice: invoice ? this.billing.toView(invoice) : null,
       creditNotes: creditNotes.map((c) => this.billing.toView(c)),
       notes: (booking.notes ?? []).map((n) => ({ id: n.id, at: n.at, authorName: n.authorName, text: n.text })),

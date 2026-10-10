@@ -1,6 +1,50 @@
 // pdfkit is a CommonJS `export =` module and this project compiles without esModuleInterop.
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 import PDFDocument = require('pdfkit');
+import { LINE, MUTED, NAVY, dateText, money, safe } from './pdf-helpers';
+import { renderTaxInvoicePdf } from './invoice-pdf-tax';
+
+export interface InvoicePdfSeller {
+  legalName: string;
+  address: string;
+  taxNumber: string;
+  email: string;
+  phone: string;
+  registrationLabel?: string;
+  registrationNumber?: string;
+  country?: string;
+  state?: string;
+  stateCode?: string;
+  website?: string;
+  bankDetails?: string;
+}
+
+export interface InvoicePdfBuyer {
+  name: string;
+  email: string;
+  phone?: string;
+  address?: string;
+  country?: string;
+  state?: string;
+  stateCode?: string;
+  registrationNumber?: string;
+}
+
+export interface InvoicePdfTax {
+  country: string;
+  taxName: string;
+  model: string;
+  rateCode: string;
+  percent: number;
+  components: { code: string; label: string; percent: number; taxableAmount: number; taxAmount: number }[];
+  placeOfSupply?: { country: string; state?: string; stateCode?: string };
+  serviceCode?: { label: string; value: string; description?: string };
+  pricesIncludeTax: boolean;
+  reverseCharge?: boolean;
+  qr?: string;
+  registrationLabel?: string;
+  notes?: string;
+}
 
 export interface InvoicePdfModel {
   kind: 'invoice' | 'credit_note';
@@ -8,8 +52,12 @@ export interface InvoicePdfModel {
   issuedAt: Date;
   status: string;
   currency: string;
-  seller: { legalName: string; address: string; taxNumber: string; email: string; phone: string };
+  seller: InvoicePdfSeller;
   customer: { name: string; email: string };
+  /** Tax module documents: title, tax snapshot and buyer. Without `taxInfo` the legacy layout is used. */
+  title?: string;
+  taxInfo?: InvoicePdfTax;
+  buyer?: InvoicePdfBuyer;
   bookingReference?: string;
   orderReference?: string;
   relatedInvoiceNumber?: string;
@@ -23,24 +71,14 @@ export interface InvoicePdfModel {
   total: number;
 }
 
-/** The built-in PDF fonts only cover Latin-1; anything else would print as garbage. */
-// eslint-disable-next-line no-irregular-whitespace
-const safe = (text: string | undefined | null) => (text ?? '').replace(/[^\x20-\x7E -ÿ]/g, '?');
-const money = (value: number, currency: string) =>
-  `${currency} ${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-const dateText = (date: Date) =>
-  new Date(date.getTime() + 4 * 3_600_000).toISOString().slice(0, 10);
-
-const NAVY = '#0f2454';
-const MUTED = '#66728f';
-const LINE = '#e3e8f0';
-
 /** Renders an invoice or credit note to a PDF buffer. No external services; pure pdfkit. */
-export function renderInvoicePdf(model: InvoicePdfModel): Promise<Buffer> {
+export function renderInvoicePdf(model: InvoicePdfModel, options: { compress?: boolean } = {}): Promise<Buffer> {
+  if (model.taxInfo) return renderTaxInvoicePdf(model, options);
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({
       size: 'A4',
       margin: 48,
+      compress: options.compress ?? true,
       info: { Title: `${model.kind === 'invoice' ? 'Invoice' : 'Credit note'} ${model.number}` },
     });
     const chunks: Buffer[] = [];
@@ -80,7 +118,7 @@ export function renderInvoicePdf(model: InvoicePdfModel): Promise<Buffer> {
     if (model.bookingReference) refs.push(`Booking: ${model.bookingReference}`);
     if (model.orderReference) refs.push(`Order: ${model.orderReference}`);
     if (model.paymentReference) refs.push(`Payment ref: ${model.paymentReference}`);
-    doc.fillColor(MUTED).fontSize(9).text(safe(refs.join('\n')), left + width / 2, y + 12, { width: width / 2, align: 'right' });
+    doc.fillColor(MUTED).fontSize(9).text(refs.map(safe).join('\n'), left + width / 2, y + 12, { width: width / 2, align: 'right' });
     y = Math.max(doc.y, y + 60) + 16;
 
     // Lines table.

@@ -209,6 +209,68 @@ export class Booking {
   @Prop({ type: Boolean })
   stockReleased?: boolean;
 
+  // Tax snapshot taken when the booking is created (see docs/BILLING_API.md), so the invoice always matches what the
+  // customer paid. Absent on bookings created before the tax module.
+  @Prop({ type: String })
+  taxCountry?: string;
+
+  @Prop({ type: String })
+  taxRegimeId?: string;
+
+  @Prop({ type: String })
+  taxName?: string;
+
+  @Prop({ type: String })
+  taxModel?: string;
+
+  @Prop({ type: String })
+  taxRateCode?: string;
+
+  @Prop({ type: Number })
+  taxPercent?: number;
+
+  @Prop({ type: [Object], default: undefined })
+  taxComponents?: { code: string; label: string; percent: number; taxableAmount: number; taxAmount: number }[];
+
+  @Prop({ type: Boolean })
+  taxPricesIncluded?: boolean;
+
+  @Prop({ type: Object })
+  taxPlaceOfSupply?: { country: string; state?: string; stateCode?: string };
+
+  @Prop({ type: Object })
+  taxServiceCode?: { label: string; value: string; description?: string };
+
+  @Prop({ type: String })
+  taxSellerId?: string;
+
+  @Prop({ type: Boolean })
+  taxFallback?: boolean;
+
+  /** Set when staff chose the tax when confirming an enquiry. */
+  @Prop({ type: Object })
+  taxOverride?: {
+    country?: string;
+    rateCode?: string;
+    placeOfSupplyState?: string;
+    placeOfSupplyStateCode?: string;
+    buyerRegistrationNumber?: string;
+    reason: string;
+    by: string;
+    at: Date;
+  };
+
+  /** Buyer details staff typed in the enquiry confirm; they win over the customer details on the invoice. */
+  @Prop({ type: Object })
+  invoiceBuyer?: {
+    name?: string;
+    address?: string;
+    country?: string;
+    state?: string;
+    stateCode?: string;
+    registrationNumber?: string;
+  };
+
   /** While pending_payment, the booking counts against capacity until this instant. */
   @Prop({ type: Date })
   holdExpiresAt?: Date;
@@ -218,6 +280,13 @@ export class Booking {
   /** Total refunded so far (mirrors the `refunds` ledger); never above `total`. */
   @Prop({ type: Number, min: 0 })
   refundedAmount?: number;
+
+  /**
+   * Supplier cost snapshot taken when the booking is confirmed (policy unit cost x units); `null` when the item had no
+   * unit cost then. Absent on bookings confirmed before Phase 2. Never recomputed (see `booking-cost.ts`).
+   */
+  @Prop({ type: Object, default: undefined })
+  cost?: { unitCost: number; quantity: number; total: number; currency: string; source: 'policy'; at: Date } | null;
 
   @Prop({ type: Date })
   cancellationRequestedAt?: Date;

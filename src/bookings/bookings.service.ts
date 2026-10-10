@@ -9,7 +9,9 @@ import { BillingService } from '../crm/billing/billing.service';
 import { InventoryService } from '../crm/inventory/inventory.service';
 import { SettingsService } from '../admin/settings/settings.service';
 import { VouchersService } from '../vouchers/vouchers.service';
+import type { BookingTaxFields } from '../tax/tax-snapshot';
 import { ServiceType } from '../common/enums/service-type.enum';
+import { BookingCostService } from './booking-cost';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import {
   AdditionalDetails,
@@ -54,6 +56,8 @@ export interface ActivityBookingInput {
   refundable: boolean;
   freeCancellationUntil?: Date;
   holdExpiresAt: Date;
+  /** The tax rule that priced the cart item, frozen on the booking. */
+  taxSnapshot?: BookingTaxFields;
 }
 
 /** A confirmed booking created by staff from a holiday, cruise or event enquiry (offline payment). */
@@ -76,6 +80,12 @@ export interface EnquiryBookingInput {
   actor: { id: string; name: string };
   eventText: string;
   note?: string;
+  /** Tax-exclusive amount, tax and snapshot when the total staff entered is split into net + tax. Without it the total is untaxed. */
+  net?: number;
+  taxAmount?: number;
+  taxSnapshot?: BookingTaxFields;
+  taxOverride?: Booking['taxOverride'];
+  invoiceBuyer?: Booking['invoiceBuyer'];
 }
 
 @Injectable()
@@ -88,6 +98,7 @@ export class BookingsService {
     private readonly billing: BillingService,
     private readonly vouchers: VouchersService,
     private readonly settings: SettingsService,
+    private readonly costs: BookingCostService,
   ) {}
 
   async create(dto: CreateBookingDto, user: AuthenticatedUser) {
@@ -216,6 +227,7 @@ export class BookingsService {
         : 'Non-refundable.',
       status: BookingStatus.PendingPayment,
       holdExpiresAt: input.holdExpiresAt,
+      ...input.taxSnapshot,
     };
     try {
       return await this.bookings
@@ -253,11 +265,14 @@ export class BookingsService {
           quantity: input.quantity,
           ...(input.adults !== undefined && { adults: input.adults }),
           ...(input.children !== undefined && { children: input.children }),
-          unitPrice: Math.round((input.total / input.quantity + Number.EPSILON) * 100) / 100,
-          subtotal: input.total,
+          unitPrice: Math.round(((input.net ?? input.total) / input.quantity + Number.EPSILON) * 100) / 100,
+          subtotal: input.net ?? input.total,
           discount: 0,
-          tax: 0,
+          tax: input.taxAmount ?? 0,
           total: input.total,
+          ...input.taxSnapshot,
+          ...(input.taxOverride && { taxOverride: input.taxOverride }),
+          ...(input.invoiceBuyer && { invoiceBuyer: input.invoiceBuyer }),
           currency: input.currency,
           refundable: false,
           cancellationPolicy: 'Arranged with our team; contact us to change or cancel this booking.',
@@ -284,7 +299,9 @@ export class BookingsService {
       ],
       { session },
     );
-    return created.toObject();
+    const booking = created.toObject();
+    await this.costs.snapshot([booking], session);
+    return booking;
   }
 
   /** Reference + status of each booking in an order (for the post-payment status poll). */
@@ -335,6 +352,7 @@ export class BookingsService {
         this.logger.error(`Booking ${row.reference} is ${row.status} but order ${orderReference} was paid; needs manual review/refund`);
       }
     }
+    await this.costs.snapshot(flipped, session);
     return { flipped, settled };
   }
 
@@ -410,6 +428,7 @@ export class BookingsService {
       if (!flipped) return this.confirmPayment(bookingId, paymentReference, actor); // lost the race
       // Activity bookings have no inventory SKU: their capacity is counted from bookings and holds.
       if (flipped.sku) await this.inventory.confirm(flipped.sku, flipped.quantity);
+      await this.costs.snapshot([flipped]).catch((error) => this.logger.error(`Cost snapshot failed for ${flipped.reference}: ${error}`));
       await this.afterConfirmed(flipped);
       return flipped;
     }
@@ -426,6 +445,11 @@ export class BookingsService {
       this.logger.error(`Invoice for ${booking.reference} failed: ${(error as Error).message}`);
     }
     await this.vouchers.issueForBooking(booking);
+  }
+
+  /** E-mails invoices / credit notes whose first send failed (backoff, max 5 attempts). Runs with the reconciliation sweep; never throws. */
+  retryInvoiceEmails(): Promise<number> {
+    return this.billing.retryEmails();
   }
 
   /** The caller's own voucher (QR) for a confirmed booking, or null while none is issued. */

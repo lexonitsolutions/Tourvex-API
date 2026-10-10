@@ -7,7 +7,7 @@ import { Audited, AuditInterceptor, setAuditContext } from '../audit/audited';
 import { streamCsv, type CsvColumn } from '../common/csv/csv';
 import { AuthenticatedUser, CurrentUser } from '../common/decorators/current-user.decorator';
 import { AdminReportsService } from './admin-reports.service';
-import { ReportRangeDto } from './admin-reports.dto';
+import { MarginReportDto, ReportRangeDto } from './admin-reports.dto';
 
 @ApiTags('admin')
 @ApiBearerAuth()
@@ -130,5 +130,32 @@ export class AdminReportsController {
       { header: 'Refunds', value: (x) => x.refunds },
       { header: 'Refunded AED', value: (x) => x.refundedAmount },
     ], r.byDay);
+  }
+
+  @Get('reports/margin')
+  @RequirePermission('finance.read')
+  @Header('Cache-Control', 'no-store')
+  @ApiOperation({ summary: 'Revenue ex-tax, supplier cost and margin grouped by product, day, month or service type' })
+  margin(@Query() query: MarginReportDto) {
+    return this.reports.marginReport(query);
+  }
+
+  @Get('reports/margin/export.csv')
+  @RequirePermission('finance.read', 'finance.export')
+  @Audited('report', 'report.export')
+  async marginCsv(@Query() query: MarginReportDto, @Res() res: Response, @Req() req: Request) {
+    const r = await this.reports.marginReport(query);
+    await this.csv(res, req, `margin-by-${r.groupBy}`, r.range, [
+      { header: 'Key', value: (x: (typeof r.rows)[number]) => x.key },
+      { header: 'Title', value: (x) => x.title },
+      { header: 'Bookings', value: (x) => x.bookings },
+      { header: 'Units', value: (x) => x.units },
+      { header: 'Revenue ex-tax AED', value: (x) => x.revenueExTax },
+      { header: 'Tax AED', value: (x) => x.taxTotal },
+      { header: 'Cost AED', value: (x) => x.cost },
+      { header: 'Margin AED', value: (x) => x.margin },
+      { header: 'Margin %', value: (x) => x.marginPct },
+      { header: 'Bookings without cost', value: (x) => x.bookingsWithoutCost },
+    ], r.rows);
   }
 }

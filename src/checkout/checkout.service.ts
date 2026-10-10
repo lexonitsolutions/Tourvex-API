@@ -13,6 +13,9 @@ import { SettingsService } from '../admin/settings/settings.service';
 import { CurrencyService } from '../currency/currency.service';
 import { indicativeDisplay } from '../currency/display';
 import { shouldExposeSamples } from '../holidays/holidays.utils';
+import { bookingTaxFields } from '../tax/tax-snapshot';
+import type { TaxDetermination } from '../tax/tax.rules';
+import { TaxService } from '../tax/tax.service';
 import { PaymentsService } from '../payments/payments.service';
 import {
   CURRENCY,
@@ -60,6 +63,7 @@ export class CheckoutService implements OnModuleInit, OnModuleDestroy {
     private readonly settings: SettingsService,
     private readonly capacity: ActivityCapacityService,
     private readonly transactions: TransactionService,
+    private readonly tax: TaxService,
     config: ConfigService,
   ) {
     this.sweepSeconds = config.get<number>('CHECKOUT_SWEEP_SECONDS', 60);
@@ -78,7 +82,11 @@ export class CheckoutService implements OnModuleInit, OnModuleDestroy {
     this.timer = setInterval(() => {
       void this.sweep();
       // Every fifth tick (5 minutes by default): finish payments whose invoice/voucher step failed.
-      if (++this.ticks % 5 === 0) void this.orders.reconcilePaidOrders();
+      if (++this.ticks % 5 === 0) {
+        void this.orders.reconcilePaidOrders();
+        // ...and e-mail invoices / credit notes whose first send failed (backoff, max 5 attempts).
+        void this.bookings.retryInvoiceEmails();
+      }
     }, this.sweepSeconds * 1000);
     this.timer.unref();
   }
@@ -508,6 +516,8 @@ export class CheckoutService implements OnModuleInit, OnModuleDestroy {
 
         const references: string[] = [];
         for (const item of items) {
+          // The tax rule that priced this line is frozen on the booking, so the invoice shows what the customer paid.
+          const det = (item.taxInfo as unknown as TaxDetermination | undefined) ?? (await this.tax.determineForProduct('activity', item.activitySlug));
           const booking = await this.bookings.createActivityBooking(
             {
               orderReference: order.orderReference,
@@ -534,6 +544,7 @@ export class CheckoutService implements OnModuleInit, OnModuleDestroy {
               discount: fromMinor(item.discountMinor),
               tax: fromMinor(item.taxMinor),
               total: fromMinor(item.totalMinor),
+              taxSnapshot: bookingTaxFields(det, item.totalMinor - item.taxMinor, item.taxMinor),
               promoCode: cart.promoCode,
               refundable: item.refundable,
               freeCancellationUntil: item.freeCancellationUntil,
@@ -649,29 +660,28 @@ export class CheckoutService implements OnModuleInit, OnModuleDestroy {
     items: CartItem[],
     now: Date,
   ) {
-    const { taxPercent } = await this.settings.getCommerce();
+    // Every line is taxed by the country where its service is delivered (see the tax module).
+    const determinations = new Map<string, TaxDetermination>();
+    for (const slug of new Set(items.map((item) => item.activitySlug))) {
+      determinations.set(slug, await this.tax.determineForProduct('activity', slug));
+    }
+    const inputs = items.map((item) => {
+      const det = determinations.get(item.activitySlug)!;
+      return { slug: item.activitySlug, subtotalMinor: item.subtotalMinor, taxPercent: det.percent, taxInclusive: det.pricesIncludeTax };
+    });
     let promo: PromoCode | null = null;
     if (cart.promoCode) {
       const found = await this.promos.findOne({ code: cart.promoCode }).lean().exec();
       if (found && !this.promoProblem(found, now)) promo = found;
     }
-    const priced = priceCart(
-      items.map((item) => ({ slug: item.activitySlug, subtotalMinor: item.subtotalMinor })),
-      promo,
-      taxPercent,
-    );
+    const priced = priceCart(inputs, promo, 0);
     if (promo && priced.discountMinor === 0) promo = null;
-    const final = promo
-      ? priced
-      : priceCart(
-          items.map((item) => ({ slug: item.activitySlug, subtotalMinor: item.subtotalMinor })),
-          null,
-          taxPercent,
-        );
+    const final = promo ? priced : priceCart(inputs, null, 0);
     items.forEach((item, i) => {
       item.discountMinor = final.items[i].discountMinor;
       item.taxMinor = final.items[i].taxMinor;
       item.totalMinor = final.items[i].totalMinor;
+      item.taxInfo = determinations.get(item.activitySlug) as unknown as Record<string, unknown>;
     });
     cart.promoCode = promo?.code;
     cart.subtotalMinor = final.subtotalMinor;

@@ -88,6 +88,13 @@ export class CartItem {
   @Prop({ type: Number, required: true, min: 0 })
   totalMinor: number;
 
+  /**
+   * The tax rule that priced this line (country, rate, components, seller; see TaxDetermination). Stored server side only,
+   * never part of the cart JSON; the booking snapshots it so the invoice matches what the customer paid.
+   */
+  @Prop({ type: Object })
+  taxInfo?: Record<string, unknown>;
+
   @Prop({ type: PickupDetailsSchema })
   pickup?: PickupDetails;
 

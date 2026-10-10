@@ -15,6 +15,7 @@ import { Holiday, HolidaySchema } from '../holidays/schemas/holiday.schema';
 import { Lead, LeadSchema } from '../leads/lead.schema';
 import { LeadsModule } from '../leads/leads.module';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { TaxModule } from '../tax/tax.module';
 import { User, UserSchema } from '../users/schemas/user.schema';
 import { EnquiryBookingService } from './enquiry-booking.service';
 import { StockAlertState, StockAlertStateSchema } from './schemas/stock-alert-state.schema';
@@ -35,6 +36,7 @@ import { StockService } from './stock.service';
     BillingModule,
     LeadsModule,
     NotificationsModule,
+    TaxModule,
     MongooseModule.forFeature([
       { name: StockPolicy.name, schema: StockPolicySchema },
       { name: StockDay.name, schema: StockDaySchema },

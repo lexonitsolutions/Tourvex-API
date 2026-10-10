@@ -115,6 +115,10 @@ export function allocate(total: number, weights: number[]): number[] {
 export interface CartPriceInput {
   slug: string;
   subtotalMinor: number;
+  /** This line's tax percent (from the tax rule of the country where it is delivered); the cart-wide percent when absent. */
+  taxPercent?: number;
+  /** Prices of this line already include tax: the tax is extracted from the amount and the total does not grow. */
+  taxInclusive?: boolean;
 }
 
 export interface CartPriceResult {
@@ -125,7 +129,14 @@ export interface CartPriceResult {
   totalMinor: number;
 }
 
-/** Total = (subtotal - discount) + tax, tax = percent of the discounted amount, per item. */
+/** Tax contained in a tax-inclusive amount: `gross - gross / (1 + rate)`. */
+export const includedTaxMinor = (grossMinor: number, percent: number): number =>
+  grossMinor - Math.round((grossMinor * 100) / (100 + percent) + 1e-7);
+
+/**
+ * Total = (subtotal - discount) + tax, tax = percent of the discounted amount, per item. Each item may carry its own
+ * percent (`taxPercent`, default the cart-wide one) and may be tax-inclusive (tax extracted, total unchanged).
+ */
 export function priceCart(
   items: CartPriceInput[],
   promo: PromoRules | null,
@@ -137,7 +148,11 @@ export function priceCart(
   const shares = allocate(discount, eligible);
   const priced = items.map((item, i) => {
     const base = item.subtotalMinor - shares[i];
-    const tax = taxMinor(base, taxPercent);
+    const percent = item.taxPercent ?? taxPercent;
+    if (item.taxInclusive) {
+      return { subtotalMinor: item.subtotalMinor, discountMinor: shares[i], taxMinor: includedTaxMinor(base, percent), totalMinor: base };
+    }
+    const tax = taxMinor(base, percent);
     return { subtotalMinor: item.subtotalMinor, discountMinor: shares[i], taxMinor: tax, totalMinor: base + tax };
   });
   const sum = (key: 'subtotalMinor' | 'discountMinor' | 'taxMinor' | 'totalMinor') =>

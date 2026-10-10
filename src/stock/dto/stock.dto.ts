@@ -15,7 +15,9 @@ import {
   MaxLength,
   Min,
   ValidateIf,
+  ValidateNested,
 } from 'class-validator';
+import { EnquiryBuyerDto, EnquiryTaxDto } from '../../tax/tax.dto';
 import { ENQUIRY_SOURCES, MANUAL_PRODUCT_TYPES, MOVEMENT_TYPES, PAYMENT_MODES, PRODUCT_TYPES } from '../stock.types';
 
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
@@ -232,6 +234,12 @@ export class ListMovementsDto {
   @MaxLength(100)
   actor?: string;
 
+  @ApiPropertyOptional({ description: 'Purchase number (PUR-YYYY-000001): rows written by receiving or voiding that purchase' })
+  @IsOptional()
+  @Transform(trim)
+  @Matches(/^PUR-\d{4}-\d{6,}$/, { message: 'purchaseNumber must look like PUR-2026-000001' })
+  purchaseNumber?: string;
+
   @ApiPropertyOptional({ example: '2026-10-01' })
   @IsOptional()
   @Matches(DAY, { message: 'from must be YYYY-MM-DD' })
@@ -337,4 +345,16 @@ export class EnquiryBookingDto {
   @IsString()
   @MaxLength(1000)
   note?: string;
+
+  @ApiPropertyOptional({ type: EnquiryTaxDto, description: 'Choose the tax country / rate / place of supply instead of the automatic rule' })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => EnquiryTaxDto)
+  tax?: EnquiryTaxDto;
+
+  @ApiPropertyOptional({ type: EnquiryBuyerDto, description: 'Buyer details for the invoice (registration number, address, state)' })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => EnquiryBuyerDto)
+  buyer?: EnquiryBuyerDto;
 }

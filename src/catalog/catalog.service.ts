@@ -12,11 +12,11 @@ import {
   priceTravellers,
   type PriceLine,
 } from '../checkout/checkout-pricing';
-import { SettingsService } from '../admin/settings/settings.service';
 import { CurrencyService } from '../currency/currency.service';
 import { indicativeDisplay } from '../currency/display';
 import { shouldExposeSamples } from '../holidays/holidays.utils';
 import { ReviewsService } from '../reviews/reviews.service';
+import { TaxService } from '../tax/tax.service';
 import {
   checkBookingRequest,
   computeDayStatus,
@@ -89,8 +89,8 @@ export class CatalogService {
     private readonly stock: StockService,
     private readonly reviews: ReviewsService,
     private readonly currency: CurrencyService,
-    private readonly settings: SettingsService,
     private readonly cache: CacheService,
+    private readonly tax: TaxService,
     config: ConfigService,
   ) {
     const nodeEnv = config.get<string>('NODE_ENV');
@@ -239,11 +239,11 @@ export class CatalogService {
   /** `POST /catalog/activities/:slug/quote`. Public, no hold is taken. */
   async quote(slug: string, dto: QuoteDto, displayCurrency?: string, now = new Date()) {
     const prepared = await this.prepareItem(slug, dto, now);
-    const { taxPercent } = await this.settings.getCommerce();
+    const det = await this.tax.determineForProduct('activity', slug);
     const pricing = priceCart(
-      [{ slug, subtotalMinor: prepared.subtotalMinor }],
+      [{ slug, subtotalMinor: prepared.subtotalMinor, taxPercent: det.percent, taxInclusive: det.pricesIncludeTax }],
       null,
-      taxPercent,
+      0,
     );
     const display = indicativeDisplay(
       fromMinor(pricing.totalMinor),

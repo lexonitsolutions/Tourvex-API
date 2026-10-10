@@ -1,11 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { InjectConnection } from '@nestjs/mongoose';
 import type { Connection } from 'mongoose';
+import { Types } from 'mongoose';
 import { dayStartUtc, dubaiDay } from '../finance/finance-rules';
 import { STAFF_ROLES } from '../admin/permissions';
 import { SettingsService } from '../admin/settings/settings.service';
 import { BookingStatus } from '../bookings/schemas/booking.schema';
 import { OPEN_STATUSES } from '../leads/leads.rules';
+import { parseItemId } from '../stock/stock.types';
+import type { MarginReportDto } from './admin-reports.dto';
+import { addSums, marginRow, type MarginSums } from './margin-rules';
 import {
   buildInsights,
   buildSummary,
@@ -447,6 +451,107 @@ export class AdminReportsService {
       byServiceType: byType.map((t) => ({ serviceType: t._id as string, count: t.count as number })),
       byDay,
     };
+  }
+
+  /**
+   * Margin by product / day / month / service type. Per booking confirmed in the range (AED): revenue ex-tax = (total -
+   * tax) x retained share (refunds subtract proportionally), tax from the tax snapshot, else the invoice, else 0
+   * (see margin-rules.ts, which the pipeline mirrors). Cancelled or refunded bookings whose units went back to stock
+   * are not sales and are left out. Cost comes from the cost snapshot; bookings without one are counted in
+   * `bookingsWithoutCost` and excluded from the margin and margin %.
+   */
+  async marginReport(input: MarginReportDto) {
+    const range = this.resolve(input);
+    const groupBy = input.groupBy ?? 'product';
+    const match: Row = {
+      confirmedAt: { $gte: range.start, $lt: range.end },
+      currency: 'AED',
+      $nor: [{ status: { $in: GONE }, stockReleased: true }],
+    };
+    if (input.productType) match.serviceType = input.productType;
+    if (input.supplierId) match.$or = await this.suppliedItems(input.supplierId);
+
+    const key: unknown =
+      groupBy === 'day'
+        ? dayOf('confirmedAt')
+        : groupBy === 'month'
+          ? { $dateToString: { format: '%Y-%m', date: '$confirmedAt', timezone: TZ } }
+          : groupBy === 'type'
+            ? '$serviceType'
+            : { $concat: ['$serviceType', ':', { $ifNull: ['$activitySlug', { $ifNull: ['$stockProductRef', '$title'] }] }] };
+    const share = {
+      $cond: [{ $gt: ['$total', 0] }, { $max: [0, { $min: [1, { $divide: [{ $subtract: ['$total', { $ifNull: ['$refundedAmount', 0] }] }, '$total'] }] }] }, 0],
+    };
+    const snapshotTax = { $cond: [{ $gt: [{ $size: { $ifNull: ['$taxComponents', []] } }, 0] }, { $sum: '$taxComponents.taxAmount' }, null] };
+
+    const [rows, nonAed] = await Promise.all([
+      this.col('bookings')
+        .aggregate([
+          { $match: match },
+          { $project: { key: key, title: 1, quantity: { $ifNull: ['$quantity', 0] }, total: 1, refundedAmount: 1, cost: '$cost.total', taxComponents: 1 } },
+          { $lookup: { from: 'invoices', let: { b: '$_id' }, pipeline: [{ $match: { $expr: { $eq: ['$bookingId', '$b'] }, kind: { $ne: 'credit_note' } } }, { $project: { tax: 1 } }, { $limit: 1 }], as: 'inv' } },
+          {
+            $addFields: {
+              tax0: { $min: ['$total', { $max: [0, { $ifNull: [snapshotTax, { $ifNull: [{ $first: '$inv.tax' }, 0] }] }] }] },
+              share,
+              hasCost: { $gte: ['$cost', 0] },
+            },
+          },
+          { $addFields: { rev: { $round: [{ $multiply: [{ $subtract: ['$total', '$tax0'] }, '$share'] }, 2] }, taxKept: { $round: [{ $multiply: ['$tax0', '$share'] }, 2] } } },
+          {
+            $group: {
+              _id: '$key',
+              title: { $first: '$title' },
+              bookings: { $sum: 1 },
+              units: { $sum: '$quantity' },
+              revenueExTax: { $sum: '$rev' },
+              taxTotal: { $sum: '$taxKept' },
+              cost: { $sum: { $cond: ['$hasCost', '$cost', 0] } },
+              costedRevenue: { $sum: { $cond: ['$hasCost', '$rev', 0] } },
+              bookingsWithoutCost: { $sum: { $cond: ['$hasCost', 0, 1] } },
+            },
+          },
+          { $sort: groupBy === 'day' || groupBy === 'month' ? { _id: 1 } : { revenueExTax: -1, _id: 1 } },
+          { $limit: 500 },
+        ])
+        .toArray(),
+      this.col('bookings').countDocuments({ confirmedAt: { $gte: range.start, $lt: range.end }, currency: { $ne: 'AED' } }),
+    ]);
+    const sums = rows.map((r) => ({ key: String(r._id), title: groupBy === 'day' || groupBy === 'month' ? String(r._id) : ((r.title as string) ?? String(r._id)), sums: r as unknown as MarginSums }));
+    return {
+      range: this.rangeView(range),
+      currency: 'AED',
+      groupBy,
+      definition: 'Revenue ex-tax = booking total minus tax (tax snapshot, else invoice, else 0), reduced by the refunded share. Cost = supplier cost snapshot taken when the booking was confirmed. Margin and margin % only count bookings that have a cost (bookingsWithoutCost shows the rest). Bookings cancelled or refunded with their units returned to stock are excluded. marginPct is a percentage of revenue ex-tax.',
+      rows: sums.map(({ key: k, title, sums: s }) => ({ key: k, title, ...marginRow(s) })),
+      totals: marginRow(addSums(sums.map((s) => s.sums))),
+      excludedNonAed: nonAed,
+    };
+  }
+
+  /** `$or` conditions matching bookings of the stock items that appear on received / paid purchases of the supplier. */
+  private async suppliedItems(supplierId: string): Promise<Row[]> {
+    const purchases = await this.col('purchases')
+      .find({ supplierId: new Types.ObjectId(supplierId), status: { $in: ['received', 'paid'] } })
+      .project({ 'lines.itemId': 1 })
+      .toArray();
+    const byProduct = new Map<string, { type: string; ref: string; variants: Set<string> }>();
+    for (const purchase of purchases) {
+      for (const line of (purchase.lines ?? []) as Array<{ itemId: string }>) {
+        const key = parseItemId(line.itemId);
+        if (!key) continue;
+        const id = `${key.productType}|${key.productRef}`;
+        const entry = byProduct.get(id) ?? { type: key.productType, ref: key.productRef, variants: new Set<string>() };
+        entry.variants.add(key.variantId);
+        byProduct.set(id, entry);
+      }
+    }
+    if (!byProduct.size) return [{ _id: { $exists: false } }]; // nothing was bought from this supplier: no booking matches
+    return [...byProduct.values()].map(({ type, ref, variants }) =>
+      type === 'activity'
+        ? { activitySlug: ref, optionId: { $in: [...variants] } }
+        : { stockProductType: type, stockProductRef: ref, stockVariantId: { $in: [...variants] } },
+    );
   }
 
   private rangeView(r: ResolvedRange) {

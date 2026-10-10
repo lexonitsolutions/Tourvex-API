@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { BookingCostService } from '../bookings/booking-cost';
 import { BookingsService } from '../bookings/bookings.service';
 import { Booking, BookingSchema, BookingStatus } from '../bookings/schemas/booking.schema';
 import { Activity, ActivitySchema } from '../catalog/schemas/activity.schema';
@@ -65,12 +66,20 @@ function build(conn: mongoose.Connection) {
     notifications as never, settings as never, cache as never, config as never,
   );
   const transactions = new TransactionService(conn);
-  const bookingsService = new BookingsService(m.bookings as never, {} as never, {} as never, {} as never, {} as never);
+  const bookingsService = new BookingsService(m.bookings as never, {} as never, {} as never, {} as never, {} as never, new BookingCostService(m.bookings as never, m.policies as never));
   jest.spyOn(bookingsService, 'afterConfirmed').mockResolvedValue(undefined);
   const enquiries = new EnquiryBookingService(
     m.holidayEnquiries as never, m.cruiseEnquiries as never, m.eventEnquiries as never, m.users as never, m.leads as never,
     stock, bookingsService, { findInvoiceForBooking: jest.fn().mockResolvedValue({ invoiceNumber: 'INV-1' }) } as never,
     { markWonFromEnquiry: jest.fn().mockResolvedValue(undefined) } as never, notifications as never, transactions,
+    {
+      countryForProduct: jest.fn().mockResolvedValue('AE'),
+      determine: jest.fn().mockResolvedValue({
+        regimeId: null, country: 'AE', taxName: 'VAT', model: 'single', rateCode: 'standard', percent: 5,
+        components: [{ code: 'VAT', label: 'VAT', percent: 5 }], sellerId: null, placeOfSupply: { country: 'AE' },
+        pricesIncludeTax: false, zeroRated: false, fallback: true,
+      }),
+    } as never,
   );
   const admin = new StockAdminService(stock, transactions, m.bookings as never);
   return { m, stock, enquiries, admin, notifications, cache, transactions };

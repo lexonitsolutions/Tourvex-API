@@ -66,6 +66,36 @@ describe('permissions map', () => {
     for (const role of [Role.Customer, Role.B2BOwner]) expect(permissionsForRoles([role])).not.toContain('stock.read');
   });
 
+  it('maps the purchasing permissions: finance, operations and admins read and write; nobody else', () => {
+    for (const role of [Role.Finance, Role.Operations, Role.Admin, Role.SuperAdmin]) {
+      expect(hasPermission([role], 'purchasing.read')).toBe(true);
+      expect(hasPermission([role], 'purchasing.write')).toBe(true);
+    }
+    for (const role of [Role.Sales, Role.Support, Role.Content, Role.Customer, Role.B2BOwner]) {
+      expect(permissionsForRoles([role])).not.toContain('purchasing.read');
+      expect(permissionsForRoles([role])).not.toContain('purchasing.write');
+    }
+  });
+
+  it('maps the tax permissions: finance and admins read and write, operations read, nobody else', () => {
+    for (const role of [Role.Finance, Role.Admin, Role.SuperAdmin]) {
+      expect(hasPermission([role], 'tax.read')).toBe(true);
+      expect(hasPermission([role], 'tax.write')).toBe(true);
+    }
+    expect(hasPermission([Role.Operations], 'tax.read')).toBe(true);
+    expect(hasPermission([Role.Operations], 'tax.write')).toBe(false);
+    for (const role of [Role.Sales, Role.Support, Role.Content, Role.Customer, Role.B2BOwner]) {
+      expect(permissionsForRoles([role])).not.toContain('tax.read');
+      expect(permissionsForRoles([role])).not.toContain('tax.write');
+    }
+  });
+
+  it('everyone who can write purchases can also read stock (the line item picker lists stock items)', () => {
+    for (const role of STAFF_ROLES) {
+      if (hasPermission([role], 'purchasing.write')) expect(hasPermission([role], 'stock.read')).toBe(true);
+    }
+  });
+
   it('keeps audit, staff and settings away from non-admin staff roles', () => {
     for (const role of [Role.Sales, Role.Operations, Role.Finance, Role.Support, Role.Content]) {
       for (const permission of permissionsForRoles([role])) {
@@ -107,6 +137,20 @@ describe('buildMenu', () => {
     }
     expect(buildMenu([]).map((item) => item.id)).not.toContain('inventory');
     expect(buildMenu(['bookings.read']).map((item) => item.id)).not.toContain('inventory');
+  });
+
+  it('adds the Purchasing group (Purchases, Suppliers) for purchasing readers only', () => {
+    for (const role of [Role.Finance, Role.Operations, Role.Admin, Role.SuperAdmin]) {
+      const purchasing = buildMenu(permissionsForRoles([role])).find((item) => item.id === 'purchasing');
+      expect(purchasing).toMatchObject({ label: 'Purchasing', href: '/admin/purchasing' });
+      expect(purchasing?.children).toEqual([
+        { id: 'purchasing-purchases', label: 'Purchases', href: '/admin/purchasing', icon: 'purchasing' },
+        { id: 'purchasing-suppliers', label: 'Suppliers', href: '/admin/purchasing/suppliers', icon: 'purchasing' },
+      ]);
+    }
+    for (const role of [Role.Sales, Role.Support, Role.Content]) {
+      expect(buildMenu(permissionsForRoles([role])).map((item) => item.id)).not.toContain('purchasing');
+    }
   });
 
   it('shows only entries the permissions allow', () => {

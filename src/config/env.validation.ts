@@ -156,6 +156,40 @@ class EnvironmentVariables {
   })
   STOCK_ALERT_EMAILS?: string;
 
+  /**
+   * SMTP e-mail (invoices, credit notes, stock alerts). Setting SMTP_HOST turns real sending on; without it the log-only
+   * provider is used and nothing is e-mailed. Credentials are never logged. Local testing: Mailpit on localhost:1025.
+   */
+  @IsOptional()
+  @IsString()
+  SMTP_HOST?: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(65535)
+  @Type(() => Number)
+  SMTP_PORT?: number;
+
+  /** `true` for implicit TLS (port 465); `false` uses STARTTLS when the server offers it. */
+  @IsOptional()
+  @IsBooleanString()
+  SMTP_SECURE?: string;
+
+  @IsOptional()
+  @IsString()
+  SMTP_USER?: string;
+
+  @IsOptional()
+  @IsString()
+  SMTP_PASS?: string;
+
+  /** Sender, e.g. `Karnish Tourism <no-reply@example.com>`. Required when SMTP_HOST is set. */
+  @ValidateIf((env: EnvironmentVariables) => Boolean(env.SMTP_HOST))
+  @IsString()
+  @IsNotEmpty({ message: 'MAIL_FROM is required when SMTP_HOST is set' })
+  MAIL_FROM?: string;
+
   /** Exchange-rate source; must return { result:"success", base_code:"AED", rates, time_last_update_unix }. */
   @IsUrl({ require_tld: false, require_protocol: true })
   FX_API_URL = 'https://open.er-api.com/v6/latest/AED';
