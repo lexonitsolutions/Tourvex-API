@@ -29,6 +29,9 @@ export interface ImageField extends FieldBase {
   aspect?: string;
   alt: true;
 }
+export interface VideoField extends FieldBase {
+  type: 'video';
+}
 export interface LinkField extends FieldBase {
   type: 'link';
 }
@@ -64,6 +67,7 @@ export type Field =
   | TextareaField
   | RichtextField
   | ImageField
+  | VideoField
   | LinkField
   | ToggleField
   | NumberField

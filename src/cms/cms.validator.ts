@@ -66,11 +66,19 @@ export function containsHtml(value: string): boolean {
 }
 
 const MEDIA_PATH = /^\/(?:images|api\/v1\/media\/images)\/[A-Za-z0-9][A-Za-z0-9._-]{0,200}$/;
+const VIDEO_PATH = /^\/(?:videos|images|api\/v1\/media\/(?:videos|images))\/?.*$/;
 
 /** Image URLs: the site's /images/..., the API media route, or https. Everything else is refused. */
 export function isSafeImageUrl(url: string): boolean {
   if (url.length === 0 || url.length > MAX_URL_LENGTH) return false;
   if (url.startsWith('/')) return MEDIA_PATH.test(url) && !url.includes('..');
+  return isSafeHttpsUrl(url);
+}
+
+/** Video URLs: the site's /videos/..., the API media route, or https. */
+export function isSafeVideoUrl(url: string): boolean {
+  if (url.length === 0 || url.length > MAX_URL_LENGTH) return false;
+  if (url.startsWith('/')) return (VIDEO_PATH.test(url) || url.startsWith('/videos/')) && !url.includes('..');
   return isSafeHttpsUrl(url);
 }
 
@@ -228,6 +236,31 @@ function validateField(
       const alt = checkString(collector, `${path}.alt`, { maxLength: MAX_ALT_LENGTH }, raw.alt, false) ?? '';
       if (containsHtml(alt)) collector.add(`${path}.alt`, 'HTML is not allowed');
       return { url, alt };
+    }
+    case 'video': {
+      if (raw === undefined || raw === null || raw === '') {
+        if (field.required) collector.add(path, 'is required');
+        return { url: '' };
+      }
+      if (typeof raw === 'string') {
+        const trimmed = raw.trim();
+        if (trimmed.length > 0 && !isSafeVideoUrl(trimmed)) {
+          collector.add(`${path}.url`, 'must be /videos/..., /api/v1/media/videos/... or an https URL');
+        }
+        return { url: trimmed };
+      }
+      if (!isPlainObject(raw)) {
+        collector.add(path, 'must be an object {url} or string URL');
+        return { url: '' };
+      }
+      for (const key of Object.keys(raw)) {
+        if (key !== 'url') collector.add(`${path}.${key}`, 'is not a known field');
+      }
+      const url = checkString(collector, `${path}.url`, { required: field.required, maxLength: MAX_URL_LENGTH }, (raw as any).url, false) ?? '';
+      if (url.length > 0 && !isSafeVideoUrl(url)) {
+        collector.add(`${path}.url`, 'must be /videos/..., /api/v1/media/videos/... or an https URL');
+      }
+      return { url };
     }
     case 'link': {
       if (raw === undefined || raw === null) {

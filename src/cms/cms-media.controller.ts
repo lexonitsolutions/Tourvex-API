@@ -20,6 +20,12 @@ const uploader = multer({
   limits: { fileSize: MAX_UPLOAD_BYTES, files: 1, fields: 5, parts: 8 },
 }).single('file');
 
+const MAX_VIDEO_BYTES = 50 * 1024 * 1024;
+const videoUploader = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: MAX_VIDEO_BYTES, files: 1, fields: 5, parts: 8 },
+}).single('file');
+
 function readUpload(request: Request, response: Response): Promise<Express.Multer.File | undefined> {
   return new Promise((resolve, reject) => {
     uploader(request, response, (error: unknown) => {
@@ -33,11 +39,41 @@ function readUpload(request: Request, response: Response): Promise<Express.Multe
   });
 }
 
+function readVideoUpload(request: Request, response: Response): Promise<Express.Multer.File | undefined> {
+  return new Promise((resolve, reject) => {
+    videoUploader(request, response, (error: unknown) => {
+      if (!error) return resolve(request.file);
+      const code = (error as { code?: string }).code;
+      if (code === 'LIMIT_FILE_SIZE') {
+        return reject(appError(413, 'VIDEO_TOO_LARGE', 'Videos can be at most 50 MB'));
+      }
+      reject(appError(400, 'INVALID_UPLOAD', 'Send one video in the multipart field "file"'));
+    });
+  });
+}
+
+const VIDEO_EXT_MAP: Record<string, string> = {
+  'video/mp4': 'mp4',
+  'video/webm': 'webm',
+  'video/quicktime': 'mov',
+  'video/ogg': 'ogg',
+};
+
+function detectVideoExtension(buffer: Buffer, originalName?: string, declaredMime?: string): string | null {
+  if (buffer.length >= 8 && buffer.readUInt32BE(4) === 0x66747970) return 'mp4';
+  if (buffer.length >= 4 && buffer[0] === 0x1a && buffer[1] === 0x45 && buffer[2] === 0xdf && buffer[3] === 0xa3) return 'webm';
+  if (buffer.length >= 4 && buffer[0] === 0x4f && buffer[1] === 0x67 && buffer[2] === 0x67 && buffer[3] === 0x53) return 'ogg';
+  if (declaredMime && VIDEO_EXT_MAP[declaredMime]) return VIDEO_EXT_MAP[declaredMime];
+  const match = /\.(mp4|webm|mov|ogg)$/i.exec(originalName || '');
+  return match ? match[1].toLowerCase() : null;
+}
+
 const view = (file: mongo.GridFSFile) => {
   const meta = (file.metadata ?? {}) as Record<string, unknown>;
+  const isVideo = typeof meta.contentType === 'string' && meta.contentType.startsWith('video/');
   return {
     id: file._id.toHexString(),
-    url: `/images/${file.filename}`,
+    url: isVideo ? `/videos/${file.filename}` : `/images/${file.filename}`,
     filename: file.filename,
     width: typeof meta.width === 'number' ? meta.width : null,
     height: typeof meta.height === 'number' ? meta.height : null,
@@ -107,6 +143,62 @@ export class CmsMediaController {
       height: probe.height,
       size: file.size,
       contentType: IMAGE_MIME[probe.type],
+    };
+  }
+
+  @Post('video')
+  @Throttle({ default: { limit: 20, ttl: 60_000 } })
+  @RequirePermission('cms.write')
+  @Audited('content_media', 'media.upload_video')
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Upload one video clip (mp4/webm/mov/ogg, max 50 MB)' })
+  async uploadVideo(
+    @CurrentUser() user: AuthenticatedUser,
+    @Req() request: Request,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    response.set('Cache-Control', 'no-store');
+    const file = await readVideoUpload(request, response);
+    if (!file) throw appError(400, 'FILE_REQUIRED', 'Send one video in the multipart field "file"');
+
+    const ext = detectVideoExtension(file.buffer, file.originalname, file.mimetype);
+    if (!ext) {
+      throw appError(415, 'UNSUPPORTED_TYPE', 'Only MP4, WebM, MOV and OGG video clips are supported');
+    }
+
+    const mime =
+      file.mimetype && file.mimetype.startsWith('video/')
+        ? file.mimetype
+        : ext === 'webm'
+        ? 'video/webm'
+        : ext === 'mov'
+        ? 'video/quicktime'
+        : ext === 'ogg'
+        ? 'video/ogg'
+        : 'video/mp4';
+
+    const filename = `clip-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    const checksum = createHash('sha256').update(file.buffer).digest('hex');
+    const id = await this.media.uploadBuffer(filename, file.buffer, {
+      source: 'cms',
+      contentType: mime,
+      checksum,
+      originalName: cleanOriginalName(file.originalname),
+      uploadedBy: user.email,
+    });
+
+    setAuditContext(request, {
+      entityId: id.toHexString(),
+      summary: `Uploaded video ${filename} (${file.size} bytes)`,
+      changes: [{ field: 'filename', from: null, to: filename }],
+    });
+
+    return {
+      id: id.toHexString(),
+      url: `/videos/${filename}`,
+      filename,
+      size: file.size,
+      contentType: mime,
     };
   }
 

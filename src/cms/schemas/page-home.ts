@@ -1,5 +1,5 @@
 import type { DocumentSchema, SectionSchema } from '../cms.types';
-import { color, image, link, select, text, textarea } from './fields';
+import { color, image, link, select, text, textarea, video } from './fields';
 
 const heading = (label = 'Heading') => text('heading', label, 120, { required: true });
 const subheading = () => text('subheading', 'Subheading', 200);
@@ -247,6 +247,10 @@ const exploreByExperience: SectionSchema = {
         text('category', 'Category name', 60, { required: true, help: 'Also used as the catalogue filter, so it must match exactly.' }),
         select('icon', 'Icon', HOME_EXPERIENCE_ICONS, { required: true }),
         image('image', 'Photo', { required: true, aspect: '4:5' }),
+        video('video', 'Hover video clip', {
+          required: false,
+          help: 'Optional video clip that plays when hovering on this card. The existing photo slowly fades out.',
+        }),
         text('theme', 'Theme colour (HSL)', 30, {
           required: true,
           placeholder: '28 72% 26%',

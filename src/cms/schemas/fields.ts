@@ -11,6 +11,7 @@ import type {
   TextareaField,
   TextField,
   ToggleField,
+  VideoField,
 } from '../cms.types';
 
 type Opts<T> = Partial<Omit<T, 'type' | 'name' | 'label'>>;
@@ -41,6 +42,12 @@ export const image = (name: string, label: string, opts: Opts<ImageField> = {}):
   type: 'image',
   label,
   alt: true,
+  ...opts,
+});
+export const video = (name: string, label: string, opts: Opts<VideoField> = {}): VideoField => ({
+  name,
+  type: 'video',
+  label,
   ...opts,
 });
 export const link = (name: string, label: string, opts: Opts<LinkField> = {}): LinkField => ({

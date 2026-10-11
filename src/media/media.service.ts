@@ -18,6 +18,10 @@ export class MediaService {
   constructor(@InjectConnection() private readonly connection: Connection) {}
 
   async findImage(filename: string): Promise<StoredMedia> {
+    return this.findMedia(filename);
+  }
+
+  async findMedia(filename: string): Promise<StoredMedia> {
     const safeFilename = this.normalizeFilename(filename);
     const file = await this.bucket
       .find({ filename: safeFilename })
@@ -38,8 +42,8 @@ export class MediaService {
     };
   }
 
-  openDownloadStream(id: mongo.BSON.ObjectId) {
-    return this.bucket.openDownloadStream(id);
+  openDownloadStream(id: mongo.BSON.ObjectId, options?: mongo.GridFSBucketReadStreamOptions) {
+    return this.bucket.openDownloadStream(id, options);
   }
 
   /** Stores a buffer in the media bucket (used by the CMS media library). Resolves with the GridFS file id. */
