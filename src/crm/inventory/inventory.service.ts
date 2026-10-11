@@ -30,7 +30,7 @@ export class InventoryService {
         },
         $setOnInsert: { reserved: 0, sold: 0 },
       },
-      { upsert: true, new: true, setDefaultsOnInsert: true },
+      { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true },
     );
   }
 
@@ -38,7 +38,7 @@ export class InventoryService {
     const item = await this.inventory.findOneAndUpdate(
       { sku, active: true, available: { $gte: quantity } },
       { $inc: { available: -quantity, reserved: quantity } },
-      { new: true },
+      { returnDocument: 'after' },
     );
     if (!item) throw new BadRequestException('Insufficient inventory');
     return item;
@@ -48,7 +48,7 @@ export class InventoryService {
     const item = await this.inventory.findOneAndUpdate(
       { sku, reserved: { $gte: quantity } },
       { $inc: { reserved: -quantity, sold: quantity } },
-      { new: true },
+      { returnDocument: 'after' },
     );
     if (!item) throw new BadRequestException('Reserved stock is unavailable');
     return item;
@@ -58,7 +58,7 @@ export class InventoryService {
     const item = await this.inventory.findOneAndUpdate(
       { sku, reserved: { $gte: quantity } },
       { $inc: { reserved: -quantity, available: quantity } },
-      { new: true },
+      { returnDocument: 'after' },
     );
     if (!item) throw new BadRequestException('Reserved stock is unavailable');
     return item;

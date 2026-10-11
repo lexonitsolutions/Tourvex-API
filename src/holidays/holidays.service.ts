@@ -217,7 +217,7 @@ export class HolidaysService {
     }
     try {
       const updated = await this.holidays
-        .findByIdAndUpdate(id, { $set: changes }, { new: true, runValidators: true })
+        .findByIdAndUpdate(id, { $set: changes }, { returnDocument: 'after', runValidators: true })
         .lean<Lean>()
         .exec();
       if (!updated) throw new NotFoundException('Holiday package not found');
@@ -489,7 +489,7 @@ export class HolidaysService {
     const changes: Record<string, unknown> = { status: dto.status };
     if (dto.note !== undefined) changes.note = dto.note;
     const updated = await this.enquiries
-      .findByIdAndUpdate(id, { $set: changes }, { new: true, runValidators: true })
+      .findByIdAndUpdate(id, { $set: changes }, { returnDocument: 'after', runValidators: true })
       .lean<Lean>()
       .exec();
     if (!updated) throw new NotFoundException('Enquiry not found');

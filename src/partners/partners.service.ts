@@ -92,7 +92,7 @@ export class PartnersService {
   private async updateUncached(id: string, dto: UpdatePartnerDto) {
     try {
       const updated = await this.partners
-        .findByIdAndUpdate(id, { $set: { ...dto } }, { new: true, runValidators: true })
+        .findByIdAndUpdate(id, { $set: { ...dto } }, { returnDocument: 'after', runValidators: true })
         .lean<Lean>()
         .exec();
       if (!updated) throw new NotFoundException('Partner not found');

@@ -199,7 +199,7 @@ export class VisasService {
   private async updateUncached(id: string, dto: UpdateVisaDto) {
     try {
       const updated = await this.visas
-        .findByIdAndUpdate(id, { $set: { ...dto } }, { new: true, runValidators: true })
+        .findByIdAndUpdate(id, { $set: { ...dto } }, { returnDocument: 'after', runValidators: true })
         .lean<Lean>()
         .exec();
       if (!updated) throw new NotFoundException('Visa not found');
@@ -280,7 +280,7 @@ export class VisasService {
     const changes: Record<string, unknown> = { status: dto.status };
     if (dto.note !== undefined) changes.note = dto.note;
     const updated = await this.enquiries
-      .findByIdAndUpdate(id, { $set: changes }, { new: true, runValidators: true })
+      .findByIdAndUpdate(id, { $set: changes }, { returnDocument: 'after', runValidators: true })
       .lean<Lean>()
       .exec();
     if (!updated) throw new NotFoundException('Enquiry not found');

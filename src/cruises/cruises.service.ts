@@ -342,7 +342,7 @@ export class CruisesService {
 
     try {
       const updated = await this.cruises
-        .findByIdAndUpdate(id, { $set: changes }, { new: true, runValidators: true })
+        .findByIdAndUpdate(id, { $set: changes }, { returnDocument: 'after', runValidators: true })
         .lean<Lean>()
         .exec();
       if (!updated) throw new NotFoundException('Cruise not found');
@@ -429,7 +429,7 @@ export class CruisesService {
     const changes: Record<string, unknown> = { status: dto.status };
     if (dto.note !== undefined) changes.note = dto.note;
     const updated = await this.enquiries
-      .findByIdAndUpdate(id, { $set: changes }, { new: true, runValidators: true })
+      .findByIdAndUpdate(id, { $set: changes }, { returnDocument: 'after', runValidators: true })
       .lean<Lean>()
       .exec();
     if (!updated) throw new NotFoundException('Enquiry not found');

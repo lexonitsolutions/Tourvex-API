@@ -74,7 +74,7 @@ export class CmsService {
         .findOneAndUpdate(
           { key, locale },
           { $setOnInsert: { key, locale, draft: null, published: null, version: 0, draftRevision: 0, revisions: [] } },
-          { upsert: true, new: true },
+          { upsert: true, returnDocument: 'after' },
         )
         .lean<Lean>()
         .exec();
@@ -248,7 +248,7 @@ export class CmsService {
           $set: { draft: value, draftUpdatedAt: new Date(), draftUpdatedBy: { id: actor.id, email: actor.email } },
           $inc: { draftRevision: 1 },
         },
-        { new: true },
+        { returnDocument: 'after' },
       )
       .lean<Lean>()
       .exec();
@@ -295,7 +295,7 @@ export class CmsService {
             },
           },
         },
-        { new: true },
+        { returnDocument: 'after' },
       )
       .lean<Lean>()
       .exec();
@@ -312,7 +312,7 @@ export class CmsService {
       .findOneAndUpdate(
         { key, locale },
         { $set: { draft: null }, $unset: { draftUpdatedAt: '', draftUpdatedBy: '' }, $inc: { draftRevision: 1 } },
-        { new: true },
+        { returnDocument: 'after' },
       )
       .lean<Lean>()
       .exec();
@@ -361,7 +361,7 @@ export class CmsService {
           $set: { draft: value, draftUpdatedAt: new Date(), draftUpdatedBy: { id: actor.id, email: actor.email } },
           $inc: { draftRevision: 1 },
         },
-        { new: true },
+        { returnDocument: 'after' },
       )
       .lean<Lean>()
       .exec();

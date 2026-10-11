@@ -350,7 +350,7 @@ export class EventsService {
     if (dto.sessions !== undefined) changes.sessions = normalizeSessions(dto.sessions);
     try {
       const updated = await this.events
-        .findByIdAndUpdate(id, { $set: changes }, { new: true, runValidators: true })
+        .findByIdAndUpdate(id, { $set: changes }, { returnDocument: 'after', runValidators: true })
         .lean<Lean>()
         .exec();
       if (!updated) throw new NotFoundException('Event not found');
@@ -444,7 +444,7 @@ export class EventsService {
     const changes: Record<string, unknown> = { status: dto.status };
     if (dto.note !== undefined) changes.note = dto.note;
     const updated = await this.enquiries
-      .findByIdAndUpdate(id, { $set: changes }, { new: true, runValidators: true })
+      .findByIdAndUpdate(id, { $set: changes }, { returnDocument: 'after', runValidators: true })
       .lean<Lean>()
       .exec();
     if (!updated) throw new NotFoundException('Enquiry not found');
