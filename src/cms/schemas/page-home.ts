@@ -131,11 +131,32 @@ const bestSellers: SectionSchema = {
 const holidays: SectionSchema = {
   type: 'holidays',
   label: 'Featured holidays',
-  description: 'Holiday package teaser. Packages come from the holidays catalogue.',
+  description: 'Holiday package teaser. Choose which packages to showcase from the catalogue.',
   icon: 'palmtree',
   single: true,
   canDisable: true,
-  fields: [heading(), subheading(), viewAll(), text('emptyMessage', 'Message when there are no packages', 200, { required: true })],
+  fields: [
+    heading(),
+    subheading(),
+    viewAll(),
+    text('emptyMessage', 'Message when there are no packages', 200, { required: true }),
+    {
+      name: 'packages',
+      type: 'list',
+      label: 'Featured holiday package cards',
+      itemLabel: 'Package',
+      max: 12,
+      fields: [
+        text('packageId', 'Package ID', 60),
+        text('slug', 'Package slug', 120, { required: true }),
+        text('title', 'Package title', 160, { required: true }),
+        image('image', 'Card photo', { required: false, aspect: '4:3' }),
+        text('country', 'Country / destination', 120),
+        text('duration', 'Duration (e.g. 2N / 3D)', 60),
+        text('price', 'Price', 60),
+      ],
+    },
+  ],
 };
 
 const cruises: SectionSchema = {
