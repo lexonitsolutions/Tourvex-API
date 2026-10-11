@@ -363,11 +363,13 @@ export class VisasService {
   }
 
   private toCard(doc: Lean) {
+    const code = doc.countryCode ? String(doc.countryCode).toLowerCase() : '';
     return {
       id: String(doc._id),
       slug: doc.slug,
       country: doc.country,
       countryCode: doc.countryCode,
+      flagUrl: code ? `/flags/${code}.svg` : null,
       title: doc.title,
       kind: doc.kind,
       startingPrice: this.money(doc.startingPrice),
