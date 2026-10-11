@@ -63,6 +63,14 @@ export class HolidayItineraryDayDto {
   @IsNotEmpty()
   @MaxLength(2000)
   description: string;
+
+  @ApiPropertyOptional({ type: [String], description: 'Key activities or moments shown for this itinerary day' })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(12)
+  @IsString({ each: true })
+  @MaxLength(300, { each: true })
+  bulletPoints?: string[];
 }
 
 export class HolidayRatingDto {

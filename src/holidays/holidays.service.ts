@@ -410,6 +410,7 @@ export class HolidaysService {
         day: d.day,
         title: d.title,
         description: d.description,
+        bulletPoints: d.bulletPoints ?? [],
       })),
       collections: doc.collections ?? [],
       ...(includeSampleFlag ? { isSample: Boolean(doc.isSample) } : {}),

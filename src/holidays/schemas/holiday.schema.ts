@@ -34,6 +34,9 @@ export class HolidayItineraryDay {
 
   @Prop({ type: String, required: true, trim: true })
   description: string;
+
+  @Prop({ type: [String], default: [] })
+  bulletPoints: string[];
 }
 export const HolidayItineraryDaySchema = SchemaFactory.createForClass(HolidayItineraryDay);
 
