@@ -276,7 +276,8 @@
         "viewAll": {
           "label": "View all cruises",
           "href": "/cruises"
-        }
+        },
+        "cruises": []
       }
     },
     {
@@ -289,7 +290,8 @@
         "viewAll": {
           "label": "View all events",
           "href": "/events"
-        }
+        },
+        "events": []
       }
     },
     {

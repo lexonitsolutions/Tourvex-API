@@ -162,21 +162,61 @@ const holidays: SectionSchema = {
 const cruises: SectionSchema = {
   type: 'cruises',
   label: 'Cruises teaser',
-  description: 'Cruise teaser (hidden automatically when there are no cruises).',
+  description: 'Cruise teaser. Choose which cruise cards to showcase from the catalogue.',
   icon: 'ship',
   single: true,
   canDisable: true,
-  fields: [heading(), subheading(), viewAll()],
+  fields: [
+    heading(),
+    subheading(),
+    viewAll(),
+    {
+      name: 'cruises',
+      type: 'list',
+      label: 'Featured cruise cards',
+      itemLabel: 'Cruise',
+      max: 12,
+      fields: [
+        text('cruiseId', 'Cruise ID', 60),
+        text('slug', 'Cruise slug', 120, { required: true }),
+        text('title', 'Cruise title', 160, { required: true }),
+        image('image', 'Card photo', { required: false, aspect: '4:3' }),
+        text('departureCity', 'Departure city', 120),
+        text('duration', 'Duration (e.g. 7 nights)', 60),
+        text('price', 'Price / fare', 60),
+      ],
+    },
+  ],
 };
 
 const events: SectionSchema = {
   type: 'events',
   label: 'Events teaser',
-  description: 'Upcoming events teaser (hidden automatically when there are none).',
+  description: 'Upcoming events teaser. Choose which event cards to showcase from the catalogue.',
   icon: 'ticket',
   single: true,
   canDisable: true,
-  fields: [heading(), subheading(), viewAll()],
+  fields: [
+    heading(),
+    subheading(),
+    viewAll(),
+    {
+      name: 'events',
+      type: 'list',
+      label: 'Featured event cards',
+      itemLabel: 'Event',
+      max: 12,
+      fields: [
+        text('eventId', 'Event ID', 60),
+        text('slug', 'Event slug', 120, { required: true }),
+        text('title', 'Event title', 160, { required: true }),
+        image('image', 'Card photo', { required: false, aspect: '4:3' }),
+        text('location', 'Venue / City', 120),
+        text('duration', 'Date / Duration', 60),
+        text('price', 'Price / ticket', 60),
+      ],
+    },
+  ],
 };
 
 const exploreByExperience: SectionSchema = {
