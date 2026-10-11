@@ -156,7 +156,99 @@
         "fromLabel": "From",
         "priceOnRequest": "Price on request",
         "fallbackTag": "Experience",
-        "cardAriaLabel": "{title}, from {price}"
+        "cardAriaLabel": "{title}, from {price}",
+        "cards": [
+          {
+            "id": "bs-card-1",
+            "title": "Hot Air Balloon Dubai",
+            "tag": "ADVENTURE TOURS",
+            "image": {
+              "url": "/images/destination-b.jpg",
+              "alt": "Hot Air Balloon Dubai"
+            },
+            "price": "AED 799",
+            "oldPrice": "AED 1,499",
+            "link": {
+              "label": "Hot Air Balloon Dubai",
+              "href": "/activities/hot-air-balloon-dubai"
+            }
+          },
+          {
+            "id": "bs-card-2",
+            "title": "Global Village Dubai",
+            "tag": "CITY TOURS",
+            "image": {
+              "url": "/images/destination-01.jpg",
+              "alt": "Global Village Dubai"
+            },
+            "price": "AED 24.50",
+            "oldPrice": "AED 25",
+            "link": {
+              "label": "Global Village Dubai",
+              "href": "/activities/global-village-dubai"
+            }
+          },
+          {
+            "id": "bs-card-3",
+            "title": "Madame Tussauds Dubai",
+            "tag": "CITY TOURS",
+            "image": {
+              "url": "/images/destination-c.jpg",
+              "alt": "Madame Tussauds Dubai"
+            },
+            "price": "AED 130",
+            "oldPrice": "AED 150",
+            "link": {
+              "label": "Madame Tussauds Dubai",
+              "href": "/activities/madame-tussauds-dubai"
+            }
+          },
+          {
+            "id": "bs-card-4",
+            "title": "Big Bus Tour Dubai",
+            "tag": "CITY TOURS",
+            "image": {
+              "url": "/images/destination-d.jpg",
+              "alt": "Big Bus Tour Dubai"
+            },
+            "price": "AED 280",
+            "oldPrice": "AED 320",
+            "link": {
+              "label": "Big Bus Tour Dubai",
+              "href": "/activities/big-bus-tour-dubai"
+            }
+          },
+          {
+            "id": "bs-card-5",
+            "title": "Dubai Frame",
+            "tag": "CITY TOURS",
+            "image": {
+              "url": "/images/destination-03.jpg",
+              "alt": "Dubai Frame"
+            },
+            "price": "AED 52",
+            "oldPrice": "AED 60",
+            "link": {
+              "label": "Dubai Frame",
+              "href": "/activities/dubai-frame"
+            }
+          },
+          {
+            "id": "bs-card-6",
+            "title": "Jebel Jais Zipline",
+            "tag": "ADVENTURE TOURS",
+            "image": {
+              "url": "/images/destination-f.jpg",
+              "alt": "Jebel Jais Zipline"
+            },
+            "price": "AED 450",
+            "oldPrice": "AED 550",
+            "link": {
+              "label": "Jebel Jais Zipline",
+              "href": "/activities/jebel-jais-zipline"
+            }
+          }
+        ]
       }
     },
     {
