@@ -72,36 +72,25 @@ const SANDGLASS = { cruiseLine: 'Sandglass Sea Lines', shipName: 'MV Dune Pearl'
 // --- Images (existing files served at /images/<name>) ---------------------------------------
 
 const IMG = {
-  bay: { url: '/images/destination-a.jpg', alt: 'Aerial view of a yacht anchored in a sheltered turquoise bay' },
-  boat: { url: '/images/destination-c.jpg', alt: 'Friends enjoying a day out together on a boat' },
-  dubai: {
-    url: '/images/destination-03.jpg',
-    alt: 'Visitor walking along a Dubai waterfront promenade towards the city towers',
-  },
-  villa: {
-    url: '/images/destination-01.jpg',
-    alt: 'Thatched seaside villa with an infinity pool facing the open sea',
-  },
-  ruins: {
-    url: '/images/destination-05.jpg',
-    alt: 'Ancient columned temple ruins on a hillside under a pale morning sky',
-  },
-  town: { url: '/images/destination-hero.jpg', alt: 'Couple with a paper map exploring a town on foot' },
-  cove: {
-    url: '/images/destination-f.jpg',
-    alt: 'Aerial view of a tropical cove with a beach cabin and clear turquoise water',
-  },
-  gateway: {
-    url: '/images/destination-d.jpg',
-    alt: 'Carved ancient temple gateway lit by the setting sun',
-  },
+  linerSunset: { url: '/images/cruise-01.jpg', alt: 'Luxury ocean cruise ship liner sailing at sunset' },
+  mediterranean: { url: '/images/cruise-02.jpg', alt: 'Grand Mediterranean cruise ship sailing near coastal islands' },
+  dubaiSailing: { url: '/images/cruise-03.jpg', alt: 'Luxury mega cruise ship sailing in the Arabian Gulf past Dubai skyline' },
+  tropical: { url: '/images/cruise-04.jpg', alt: 'Modern cruise liner navigating through tropical turquoise waters' },
+  bay: { url: '/images/cruise-01.jpg', alt: 'Luxury ocean cruise ship liner sailing at sunset' },
+  boat: { url: '/images/cruise-02.jpg', alt: 'Grand Mediterranean cruise ship sailing near coastal islands' },
+  dubai: { url: '/images/cruise-03.jpg', alt: 'Luxury mega cruise ship sailing in the Arabian Gulf past Dubai skyline' },
+  villa: { url: '/images/cruise-04.jpg', alt: 'Modern cruise liner navigating through tropical turquoise waters' },
+  ruins: { url: '/images/cruise-02.jpg', alt: 'Grand Mediterranean cruise ship sailing near coastal islands' },
+  town: { url: '/images/cruise-01.jpg', alt: 'Luxury ocean cruise ship liner sailing at sunset' },
+  cove: { url: '/images/cruise-04.jpg', alt: 'Modern cruise liner navigating through tropical turquoise waters' },
+  gateway: { url: '/images/cruise-03.jpg', alt: 'Luxury mega cruise ship sailing in the Arabian Gulf past Dubai skyline' },
 };
 
 const GALLERY = {
-  gulf: [IMG.bay, IMG.boat, IMG.dubai, IMG.villa],
-  med: [IMG.bay, IMG.ruins, IMG.boat, IMG.town],
-  asia: [IMG.boat, IMG.cove, IMG.villa, IMG.bay],
-  redSea: [IMG.bay, IMG.gateway, IMG.boat, IMG.cove],
+  gulf: [IMG.dubaiSailing, IMG.linerSunset, IMG.mediterranean, IMG.tropical],
+  med: [IMG.mediterranean, IMG.linerSunset, IMG.tropical, IMG.dubaiSailing],
+  asia: [IMG.tropical, IMG.linerSunset, IMG.mediterranean, IMG.dubaiSailing],
+  redSea: [IMG.linerSunset, IMG.dubaiSailing, IMG.mediterranean, IMG.tropical],
 };
 
 // --- Itinerary building blocks --------------------------------------------------------------
@@ -840,13 +829,20 @@ export const SAMPLE_CRUISES: SampleCruise[] = DRAFTS.map((draft, index) => {
   const homeInfo = HOME_PORTS[draft.home];
   const stops = itinerary(draft.home, draft.route);
   const nights = draft.nights;
-  const cover = IMG[draft.cover];
+  const coverUrl =
+    draft.home === 'Dubai' || draft.home === 'Abu Dhabi'
+      ? '/images/cruise-03.jpg'
+      : draft.region === 'Southeast Asia'
+      ? '/images/cruise-04.jpg'
+      : index % 2 === 0
+      ? '/images/cruise-01.jpg'
+      : '/images/cruise-02.jpg';
   return {
     slug: draft.slug,
     title: draft.title,
     summary: draft.summary,
     description: draft.description,
-    coverImage: cover.url,
+    coverImage: coverUrl,
     images: draft.gallery.map((image) => ({ url: image.url, alt: image.alt })),
     cruiseLine: draft.operator.cruiseLine,
     shipName: draft.operator.shipName,

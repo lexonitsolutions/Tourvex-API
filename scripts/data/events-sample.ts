@@ -56,38 +56,25 @@ const KSA = 'Saudi Arabia';
 // --- Images: existing frontend files only (/images/<name>), rotated ---------------------------
 
 const IMAGE_POOL = [
-  'destination-a',
-  'destination-b',
-  'destination-c',
-  'destination-d',
-  'destination-e',
-  'destination-f',
-  'destination-01',
-  'destination-02',
-  'destination-03',
-  'destination-05',
-  'a1',
-  'a2',
-  'a3',
-  'a4',
-  'a',
-  'c',
-  'e',
-  'f',
-  '01',
-  '02',
-  '03',
-  '04',
-  '05',
-  '06',
-  '1',
-  '2',
-  '3',
-  '4',
-  '5',
-  '7',
-  '8',
-].map((name) => `/images/${name}.jpg`);
+  '/images/event-01.jpg',
+  '/images/event-02.jpg',
+  '/images/event-03.jpg',
+  '/images/event-04.jpg',
+  '/images/event-05.jpg',
+  '/images/event-06.jpg',
+  '/images/event-07.jpg',
+  '/images/event-08.jpg',
+];
+
+const CATEGORY_IMAGES: Record<string, string[]> = {
+  Concerts: ['/images/event-01.jpg', '/images/event-06.jpg', '/images/event-05.jpg'],
+  Family: ['/images/event-02.jpg', '/images/event-07.jpg', '/images/event-01.jpg'],
+  Sports: ['/images/event-03.jpg', '/images/event-08.jpg', '/images/event-01.jpg'],
+  Exhibitions: ['/images/event-04.jpg', '/images/event-06.jpg', '/images/event-07.jpg'],
+  Comedy: ['/images/event-05.jpg', '/images/event-01.jpg', '/images/event-06.jpg'],
+  Festivals: ['/images/event-01.jpg', '/images/event-06.jpg', '/images/event-05.jpg'],
+  Theatre: ['/images/event-07.jpg', '/images/event-02.jpg', '/images/event-04.jpg'],
+};
 
 const image = (index: number) =>
   IMAGE_POOL[((index % IMAGE_POOL.length) + IMAGE_POOL.length) % IMAGE_POOL.length];
@@ -758,8 +745,9 @@ const buildEvent = (draft: Draft, index: number): SampleEvent => {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
-  const gallery = [index * 3, index * 3 + 1, index * 3 + 2].map((n) => ({
-    url: image(n),
+  const catImgs = CATEGORY_IMAGES[draft.category] || [image(index), image(index + 1), image(index + 2)];
+  const gallery = catImgs.map((url) => ({
+    url,
     alt: `${draft.title} - event photo`,
   }));
   return {
@@ -770,7 +758,7 @@ const buildEvent = (draft: Draft, index: number): SampleEvent => {
       draft.blurb,
       `This is a sample listing for ${draft.venue} in ${draft.city}. Sessions run in the evening, doors open an hour before the start, and we recommend arriving early to find your seat. Send an enquiry with your preferred session and ticket type and our team will reply with availability and the final price.`,
     ].join('\n\n'),
-    coverImage: image(index * 3),
+    coverImage: catImgs[0] || image(index),
     images: gallery,
     category: draft.category,
     venue: draft.venue,
