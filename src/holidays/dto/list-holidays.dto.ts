@@ -63,11 +63,11 @@ export class ListHolidaysDto extends AdminCatalogFilterDto {
   @Max(1000)
   page = 1;
 
-  @ApiPropertyOptional({ default: 12, minimum: 1, maximum: 48 })
+  @ApiPropertyOptional({ default: 12, minimum: 1, maximum: 100 })
   @Type(() => Number)
   @IsInt()
   @Min(1)
-  @Max(48)
+  @Max(100)
   limit = 12;
 
   @ApiPropertyOptional({ default: 'AED' })
