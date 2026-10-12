@@ -65,8 +65,16 @@ export class MediaService {
     filenameContains?: string;
     skip: number;
     limit: number;
+    kind?: 'image' | 'video' | 'all';
   }): Promise<{ files: mongo.GridFSFile[]; total: number }> {
-    const filter: Record<string, unknown> = { 'metadata.contentType': { $regex: '^image/' } };
+    const filter: Record<string, unknown> = options.kind === 'all' ? {} : options.kind === 'video'
+      ? {
+          $or: [
+            { 'metadata.contentType': { $regex: '^video/' } },
+            { filename: { $regex: '\\.(mp4|webm|mov|ogg)$', $options: 'i' } },
+          ],
+        }
+      : { 'metadata.contentType': { $regex: '^image/' } };
     if (options.filenameContains) {
       filter.filename = {
         $regex: options.filenameContains.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
@@ -85,6 +93,53 @@ export class MediaService {
       collection.countDocuments(filter),
     ]);
     return { files, total };
+  }
+
+  /** Finds stored content/catalog values that reference a media filename. Read-only and bounded per collection. */
+  async findApplicationReferences(filename: string): Promise<Array<{ collection: string; id: string; title: string; path: string; href?: string; publicHref?: string }>> {
+    if (!this.connection.db) throw new ServiceUnavailableException('Media database is unavailable');
+    const collections = await this.connection.db.listCollections({}, { nameOnly: true }).toArray();
+    const excluded = /^(media\.|audit_logs$|capacity_locks$|counters$|crm_counters$|fx_rates$|stock_alert_states$)/i;
+    const hits: Array<{ collection: string; id: string; title: string; path: string; href?: string; publicHref?: string }> = [];
+    const walk = (value: unknown, path: string, add: (path: string) => void) => {
+      if (typeof value === 'string') {
+        if (value === filename || value.endsWith(`/${filename}`)) add(path);
+        return;
+      }
+      if (Array.isArray(value)) return value.forEach((item, index) => walk(item, `${path}[${index}]`, add));
+      if (value && typeof value === 'object') Object.entries(value as Record<string, unknown>).forEach(([key, item]) => walk(item, path ? `${path}.${key}` : key, add));
+    };
+    for (const { name } of collections.filter((item) => !excluded.test(item.name))) {
+      const docs = await this.connection.db.collection(name).find({}).limit(5000).toArray();
+      for (const doc of docs) {
+        walk(doc, '', (path) => {
+          const key = String(doc.key || doc.slug || doc._id);
+          const title = String(doc.title || doc.name || doc.label || doc.key || key);
+          const type = name.toLowerCase();
+          const href = type === 'cms_documents' ? `/admin/content/${encodeURIComponent(String(doc.key || ''))}`
+            : type === 'activities' ? `/admin/catalog/activities/${doc._id}`
+            : type === 'holidays' ? `/admin/catalog/holidays/${doc._id}`
+            : type === 'cruises' ? `/admin/catalog/cruises/${doc._id}`
+            : type === 'events' ? `/admin/catalog/events/${doc._id}`
+            : type === 'visas' ? `/admin/catalog/visas/${doc._id}` : undefined;
+          const slug = typeof doc.slug === 'string' ? encodeURIComponent(doc.slug) : '';
+          const publicHref = type === 'cms_documents' && doc.key === 'page.activities' ? '/activities'
+            : type === 'cms_documents' && doc.key === 'page.home' ? '/'
+            : type === 'activities' && slug ? `/activities/${slug}`
+            : type === 'holidays' && slug ? `/holidays/${slug}`
+            : type === 'cruises' && slug ? `/cruises/${slug}`
+            : type === 'events' && slug ? `/events/${slug}`
+            : type === 'visas' && slug ? `/visas/${slug}` : undefined;
+          hits.push({ collection: name, id: key, title, path, href, publicHref });
+        });
+      }
+    }
+    return hits;
+  }
+
+  async isActiveFilenameVersion(file: mongo.GridFSFile): Promise<boolean> {
+    const newest = await this.bucket.find({ filename: file.filename }).sort({ uploadDate: -1 }).limit(1).next();
+    return Boolean(newest && newest._id.equals(file._id));
   }
 
   async findFileById(id: string): Promise<mongo.GridFSFile | null> {

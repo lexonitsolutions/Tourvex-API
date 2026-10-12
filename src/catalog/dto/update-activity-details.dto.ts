@@ -8,6 +8,7 @@ import {
   IsBoolean,
   IsIn,
   IsInt,
+  IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
@@ -21,7 +22,9 @@ import {
 import { TRANSFER_TYPES } from '../activity-booking.utils';
 import { ISO_DATE_PATTERN, OPTION_ID_PATTERN } from './activity-booking.dto';
 
-const IMAGE_URL = /^(https:\/\/|\/images\/)\S+$/;
+const IMAGE_URL = /^(https:\/\/|\/)\S+$/;
+const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const list = () => ({ each: true });
 
 export class MoneyInputDto {
   @IsNumber({ maxDecimalPlaces: 2 })
@@ -42,6 +45,14 @@ export class GalleryImageDto {
   @IsString()
   @MaxLength(200)
   alt: string;
+}
+
+export class ActivityVideoDto {
+  @Matches(/^(https:\/\/|\/videos\/|\/api\/v1\/media\/videos\/)\S+$/, {
+    message: 'url must be https://... or a site video path',
+  })
+  @MaxLength(500)
+  url: string;
 }
 
 export class LocationDto {
@@ -66,6 +77,59 @@ export class LocationDto {
   @Min(-180)
   @Max(180)
   lng?: number;
+}
+
+export class ActivityItineraryItemDto {
+  @IsString()
+  @MinLength(1)
+  @MaxLength(180)
+  title: string;
+
+  @IsString()
+  @MinLength(1)
+  @MaxLength(3000)
+  description: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  duration?: string;
+
+  @IsOptional()
+  @Matches(IMAGE_URL, { message: 'imageUrl must be https://... or /images/...' })
+  @MaxLength(500)
+  imageUrl?: string;
+}
+
+export class ActivityFaqDto {
+  @IsString()
+  @MinLength(1)
+  @MaxLength(300)
+  question: string;
+
+  @IsString()
+  @MinLength(1)
+  @MaxLength(3000)
+  answer: string;
+}
+
+export class ActivityContentSectionDto {
+  @IsString()
+  @MinLength(1)
+  @MaxLength(180)
+  title: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(5000)
+  body?: string;
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(30)
+  @IsString(list())
+  @MaxLength(500, list())
+  items?: string[];
 }
 
 export class ActivityOptionDto {
@@ -131,6 +195,7 @@ export class ActivityOptionDto {
   @ArrayMaxSize(7)
   @ArrayUnique()
   @IsInt({ each: true })
+  @Type(() => Number)
   @Min(0, { each: true })
   @Max(6, { each: true })
   operatingWeekdays: number[];
@@ -154,18 +219,75 @@ export class ActivityOptionDto {
   cutoffHours?: number;
 }
 
-const list = () => ({ each: true });
-
 /** Whitelist of detail fields staff may edit. `options` and `gallery` are replaced wholesale. */
 export class UpdateActivityDetailsDto {
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(200)
+  title?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  @Matches(SLUG, { message: 'slug must be lowercase letters, numbers and single hyphens' })
+  slug?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(600)
+  summary?: string;
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(10)
+  @IsString(list())
+  @IsNotEmpty(list())
+  destinations?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(20)
+  @IsString(list())
+  @IsNotEmpty(list())
+  categories?: string[];
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => MoneyInputDto)
+  price?: MoneyInputDto | null;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => MoneyInputDto)
+  salePrice?: MoneyInputDto | null;
+
+  @IsOptional()
+  @IsString()
+  @Matches(IMAGE_URL, { message: 'imageUrl must be https://... or /images/...' })
+  @MaxLength(500)
+  imageUrl?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  published?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  isSample?: boolean;
+
   @ApiPropertyOptional()
   @IsOptional()
   @IsArray()
-  @ArrayMinSize(1)
   @ArrayMaxSize(12)
   @ValidateNested({ each: true })
   @Type(() => GalleryImageDto)
   gallery?: GalleryImageDto[];
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => ActivityVideoDto)
+  heroVideo?: ActivityVideoDto | null;
 
   @IsOptional()
   @IsString()
@@ -232,6 +354,41 @@ export class UpdateActivityDetailsDto {
   @IsString(list())
   @MaxLength(800, list())
   importantInfo?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(30)
+  @IsString(list())
+  @MaxLength(500, list())
+  whatToBring?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(30)
+  @IsString(list())
+  @MaxLength(800, list())
+  cancellationPolicy?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(30)
+  @ValidateNested({ each: true })
+  @Type(() => ActivityItineraryItemDto)
+  itinerary?: ActivityItineraryItemDto[];
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(30)
+  @ValidateNested({ each: true })
+  @Type(() => ActivityFaqDto)
+  faqs?: ActivityFaqDto[];
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(20)
+  @ValidateNested({ each: true })
+  @Type(() => ActivityContentSectionDto)
+  contentSections?: ActivityContentSectionDto[];
 
   @IsOptional()
   @ValidateNested()

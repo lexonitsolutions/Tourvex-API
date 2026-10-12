@@ -32,6 +32,7 @@
     "seed:cms": "tsx scripts/seed-cms.ts",
     "seed:tax": "tsx scripts/seed-tax.ts",
     "seed:activity-details": "tsx scripts/seed-activity-details.ts",
+    "seed:reference-activity": "tsx scripts/seed-reference-activity.ts",
     "seed:crm": "tsx scripts/seed-mock-crm.ts",
     "backfill:vouchers": "tsx scripts/backfill-vouchers.ts",
     "leads:backfill": "tsx scripts/backfill-leads.ts",

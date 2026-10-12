@@ -38,6 +38,14 @@ export class GalleryImage {
 export const GalleryImageSchema = SchemaFactory.createForClass(GalleryImage);
 
 @Schema({ _id: false })
+export class ActivityVideo {
+  @Prop({ type: String, required: true, trim: true })
+  url: string;
+}
+
+export const ActivityVideoSchema = SchemaFactory.createForClass(ActivityVideo);
+
+@Schema({ _id: false })
 export class ActivityLocation {
   @Prop({ type: String, required: true })
   name: string;
@@ -53,6 +61,48 @@ export class ActivityLocation {
 }
 
 export const ActivityLocationSchema = SchemaFactory.createForClass(ActivityLocation);
+
+@Schema({ _id: false })
+export class ActivityItineraryItem {
+  @Prop({ type: String, required: true, trim: true })
+  title: string;
+
+  @Prop({ type: String, required: true, trim: true })
+  description: string;
+
+  @Prop({ type: String, trim: true })
+  duration?: string;
+
+  @Prop({ type: String, trim: true })
+  imageUrl?: string;
+}
+
+export const ActivityItineraryItemSchema = SchemaFactory.createForClass(ActivityItineraryItem);
+
+@Schema({ _id: false })
+export class ActivityFaq {
+  @Prop({ type: String, required: true, trim: true })
+  question: string;
+
+  @Prop({ type: String, required: true, trim: true })
+  answer: string;
+}
+
+export const ActivityFaqSchema = SchemaFactory.createForClass(ActivityFaq);
+
+@Schema({ _id: false })
+export class ActivityContentSection {
+  @Prop({ type: String, required: true, trim: true })
+  title: string;
+
+  @Prop({ type: String, trim: true })
+  body?: string;
+
+  @Prop({ type: [String], default: [] })
+  items?: string[];
+}
+
+export const ActivityContentSectionSchema = SchemaFactory.createForClass(ActivityContentSection);
 
 /** A bookable variant of an activity. Option prices are the authoritative per-pax prices (AED). */
 @Schema({ _id: false })
@@ -167,6 +217,9 @@ export class Activity {
   @Prop({ type: [GalleryImageSchema], default: undefined })
   gallery?: GalleryImage[];
 
+  @Prop({ type: ActivityVideoSchema })
+  heroVideo?: ActivityVideo;
+
   @Prop({ type: String })
   operatingHours?: string;
 
@@ -199,6 +252,21 @@ export class Activity {
 
   @Prop({ type: [String], default: undefined })
   importantInfo?: string[];
+
+  @Prop({ type: [String], default: undefined })
+  whatToBring?: string[];
+
+  @Prop({ type: [String], default: undefined })
+  cancellationPolicy?: string[];
+
+  @Prop({ type: [ActivityItineraryItemSchema], default: undefined })
+  itinerary?: ActivityItineraryItem[];
+
+  @Prop({ type: [ActivityFaqSchema], default: undefined })
+  faqs?: ActivityFaq[];
+
+  @Prop({ type: [ActivityContentSectionSchema], default: undefined })
+  contentSections?: ActivityContentSection[];
 
   @Prop({ type: ActivityLocationSchema })
   location?: ActivityLocation;

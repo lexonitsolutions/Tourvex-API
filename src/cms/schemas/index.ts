@@ -2,6 +2,7 @@ import type { DocumentSchema, SectionSchema } from '../cms.types';
 import { SUPPORTED_LOCALES } from '../cms.types';
 import { GLOBAL_FOOTER_SCHEMA, GLOBAL_HEADER_SCHEMA, GLOBAL_SEO_SCHEMA } from './global';
 import { HOME_SECTION_SCHEMAS, PAGE_HOME_SCHEMA } from './page-home';
+import { ACTIVITIES_SECTION_SCHEMAS, PAGE_ACTIVITIES_SCHEMA } from './page-activities';
 
 /**
  * The schema registry: the single source of truth for what can be edited. Adding a document or a
@@ -9,6 +10,7 @@ import { HOME_SECTION_SCHEMAS, PAGE_HOME_SCHEMA } from './page-home';
  */
 export const DOCUMENT_SCHEMAS: readonly DocumentSchema[] = [
   PAGE_HOME_SCHEMA,
+  PAGE_ACTIVITIES_SCHEMA,
   GLOBAL_HEADER_SCHEMA,
   GLOBAL_FOOTER_SCHEMA,
   GLOBAL_SEO_SCHEMA,
@@ -16,7 +18,7 @@ export const DOCUMENT_SCHEMAS: readonly DocumentSchema[] = [
 
 /** Every section schema of every page document (types are unique across pages). */
 export const SECTION_SCHEMAS: Readonly<Record<string, SectionSchema>> = Object.fromEntries(
-  HOME_SECTION_SCHEMAS.map((section) => [section.type, section]),
+  [...HOME_SECTION_SCHEMAS, ...ACTIVITIES_SECTION_SCHEMAS].map((section) => [section.type, section]),
 );
 
 export const MAX_BATCH_KEYS = 10;

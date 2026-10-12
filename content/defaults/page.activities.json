@@ -1,0 +1,38 @@
+{
+  "sections": [
+    { "id": "activities-hero", "type": "activitiesHero", "enabled": true, "data": {
+      "eyebrow": "Activities & Experiences", "heading": "Discover amazing activities in", "accent": "Dubai",
+      "description": "From thrilling adventures to relaxing experiences, explore the best activities the UAE has to offer.",
+      "image": { "url": "/images/destination-03.jpg", "alt": "Dubai skyline at sunset" },
+      "video": { "url": "" },
+      "overlay": "#10295b", "overlayOpacity": 58, "alignment": "left",
+      "searchPlaceholder": "Search activities, experiences or keywords...", "cta": { "label": "", "href": "" },
+      "categories": [
+        { "id": "all", "label": "All activities", "category": "", "icon": "▦", "visible": true },
+        { "id": "theme", "label": "Theme Parks", "category": "Theme Parks", "icon": "♜", "visible": true },
+        { "id": "city", "label": "City Tours", "category": "City Tours", "icon": "⌁", "visible": true },
+        { "id": "adventure", "label": "Adventure Tours", "category": "Adventure Tours", "icon": "△", "visible": true },
+        { "id": "water", "label": "Water Activities", "category": "Water Activities", "icon": "≈", "visible": true },
+        { "id": "desert", "label": "Desert Safari", "category": "Desert Safari Tours", "icon": "◆", "visible": true }
+      ]
+    }},
+    { "id": "activities-filters", "type": "activitiesFilters", "enabled": true, "data": {
+      "heading": "Filters", "clearLabel": "Clear all", "destinationLabel": "Destination", "showDestination": true,
+      "categoryLabel": "Category", "showCategory": true, "priceLabel": "Price", "showPrice": true,
+      "durationLabel": "Duration", "showDuration": true, "tripTypeLabel": "Trip type", "showTripType": true,
+      "offerLabel": "On offer", "offerDescription": "{count} activities with a discount", "showOffers": true,
+      "sortLabel": "Sort by", "resultsLabel": "{count} {noun} found", "loadMoreLabel": "Load more ({count} left)"
+    }},
+    { "id": "activities-featured", "type": "activitiesFeatured", "enabled": true, "data": { "heading": "Featured activities", "description": "Hand-picked experiences from our live catalogue.", "activities": [] }},
+    { "id": "activities-highlights", "type": "activitiesHighlights", "enabled": true, "data": { "heading": "Book with confidence", "description": "Thoughtfully selected experiences with support when you need it.", "items": [
+      { "id": "secure", "icon": "✓", "title": "Secure booking", "description": "Protected checkout and clear pricing." },
+      { "id": "selected", "icon": "★", "title": "Carefully selected", "description": "Quality experiences from trusted partners." },
+      { "id": "support", "icon": "☏", "title": "Human support", "description": "Helpful assistance before and after booking." }
+    ]}},
+    { "id": "activities-faqs", "type": "activitiesFaqs", "enabled": true, "data": { "heading": "Frequently asked questions", "items": [
+      { "id": "booking", "question": "How do I book an activity?", "answer": "Choose an experience, select the available option and follow the booking steps shown on its detail page." },
+      { "id": "confirmation", "question": "When will I receive confirmation?", "answer": "Confirmation timing is shown on each activity. Our team will contact you if more information is required." }
+    ]}},
+    { "id": "activities-cta", "type": "activitiesCta", "enabled": true, "data": { "heading": "Need help choosing an experience?", "description": "Our travel team can help you find an activity that fits your plans.", "image": { "url": "", "alt": "" }, "cta": { "label": "Get help", "href": "/contact" }}}
+  ]
+}

@@ -44,6 +44,11 @@ export interface SampleActivityDetails {
   exclusions: string[];
   howToRedeem: string[];
   importantInfo: string[];
+  whatToBring?: string[];
+  cancellationPolicy?: string[];
+  itinerary?: Array<{ title: string; duration?: string; description: string; imageUrl?: string }>;
+  faqs?: Array<{ question: string; answer: string }>;
+  contentSections?: Array<{ title: string; body?: string; items?: string[] }>;
   duration: string;
   locationName: string;
   locationAddress: string;
@@ -75,6 +80,23 @@ export const SAMPLE_ACTIVITY_DETAILS: SampleActivityDetails[] = [
       'Show the QR code at the entrance.',
     ],
     importantInfo: [SAMPLE_NOTICE, 'Bring a photo ID; entry may be refused without it.'],
+    whatToBring: ['A charged phone with your mobile voucher', 'A valid photo ID', 'Comfortable footwear'],
+    cancellationPolicy: [
+      'Cancel at least 24 hours before the selected time for a full refund on refundable options.',
+      'Late arrivals and no-shows are not refundable.',
+    ],
+    itinerary: [
+      { title: 'Arrival and check-in', duration: '15 minutes', description: 'Present your mobile voucher and photo ID, then complete the entrance security check.' },
+      { title: 'Welcome experience', duration: '20 minutes', description: 'Follow the introductory route before continuing to the main viewing level.' },
+      { title: 'Explore the observation level', duration: '60-90 minutes', description: 'Enjoy the skyline viewpoints at your own pace and use the available interpretation displays.' },
+    ],
+    faqs: [
+      { question: 'How early should I arrive?', answer: 'Plan to arrive at least 15 minutes before the time printed on your voucher.' },
+      { question: 'Can I show the voucher on my phone?', answer: 'Yes. A mobile voucher is accepted, so printing is not required.' },
+    ],
+    contentSections: [
+      { title: 'Before you visit', body: 'A little preparation makes the experience smoother.', items: ['Check the selected date and time on every voucher.', 'Allow extra travel time during busy periods.', 'Keep all guests together during check-in.'] },
+    ],
     duration: 'Approx 1 to 2 hours',
     locationName: 'Downtown Dubai (sample)',
     locationAddress: 'Dubai, United Arab Emirates',

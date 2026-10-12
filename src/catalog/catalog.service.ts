@@ -1,5 +1,5 @@
 import { CacheService } from '../common/cache/cache.service';
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -14,7 +14,7 @@ import {
 } from '../checkout/checkout-pricing';
 import { CurrencyService } from '../currency/currency.service';
 import { indicativeDisplay } from '../currency/display';
-import { shouldExposeSamples } from '../holidays/holidays.utils';
+import { shouldExposeSamples, slugify } from '../holidays/holidays.utils';
 import { ReviewsService } from '../reviews/reviews.service';
 import { TaxService } from '../tax/tax.service';
 import {
@@ -31,13 +31,15 @@ import {
 import type { ClientSession } from 'mongoose';
 import { StockService } from '../stock/stock.service';
 import { AvailabilityQueryDto, QuoteDto } from './dto/activity-booking.dto';
-import { ListActivitiesDto } from './dto/list-activities.dto';
+import { ListActivitiesDto, ListAdminActivitiesDto } from './dto/list-activities.dto';
 import { UpdateActivityDetailsDto } from './dto/update-activity-details.dto';
+import { CreateActivityDto } from './dto/create-activity.dto';
 import { Activity, ActivityOption } from './schemas/activity.schema';
 
 /** Detail fields: hidden from lists, and stripped from sample activities in production. */
 export const DETAIL_FIELDS = [
   'gallery',
+  'heroVideo',
   'operatingHours',
   'instantConfirmation',
   'mobileVoucher',
@@ -49,6 +51,11 @@ export const DETAIL_FIELDS = [
   'exclusions',
   'howToRedeem',
   'importantInfo',
+  'whatToBring',
+  'cancellationPolicy',
+  'itinerary',
+  'faqs',
+  'contentSections',
   'location',
   'duration',
   'options',
@@ -56,6 +63,8 @@ export const DETAIL_FIELDS = [
 ] as const;
 
 const LIST_PROJECTION = Object.fromEntries(DETAIL_FIELDS.map((field) => [field, 0]));
+
+const EDITABLE_CORE_FIELDS = ['slug', 'destinations', 'categories', 'price', 'salePrice', 'imageUrl', 'published'] as const;
 
 export interface PreparedItem {
   activity: {
@@ -133,6 +142,75 @@ export class CatalogService {
     };
   }
 
+  async listAdmin(query: ListAdminActivitiesDto) {
+    const filter: Record<string, any> = {};
+    if (query.q) filter.$text = { $search: query.q };
+    if (query.published !== undefined) filter.published = query.published;
+    if (query.sample !== undefined) filter.detailsAreSample = query.sample;
+    const skip = (query.page - 1) * query.limit;
+    const sort = query.sort === 'title_desc' ? { 'title.en': -1 } : query.sort === 'title_asc' ? { 'title.en': 1 } : { updatedAt: -1 };
+    const [items, total] = await Promise.all([
+      this.activities.find(filter, { title: 1, slug: 1, imageUrl: 1, gallery: 1, destinations: 1, categories: 1, published: 1, detailsAreSample: 1, updatedAt: 1 }).sort(sort as any).skip(skip).limit(query.limit).lean().exec(),
+      this.activities.countDocuments(filter),
+    ]);
+    return {
+      items: items.map((item) => ({
+        id: String(item._id),
+        title: item.title?.en || '',
+        slug: item.slug,
+        image: item.gallery?.[0]?.url || item.imageUrl,
+        destinations: item.destinations || [],
+        categories: item.categories || [],
+        published: Boolean(item.published),
+        isSample: Boolean(item.detailsAreSample),
+        updatedAt: item.updatedAt,
+      })),
+      pagination: { page: query.page, limit: query.limit, total, pages: Math.ceil(total / query.limit) },
+    };
+  }
+
+  async getAdmin(id: string) {
+    const item = await this.activities.findById(id).lean().exec();
+    if (!item) throw new NotFoundException('Activity not found');
+    return { ...this.localize(item, 'en'), id: String(item._id), isSample: Boolean(item.detailsAreSample) };
+  }
+
+  async create(dto: CreateActivityDto) {
+    const slug = dto.slug ?? slugify(dto.title);
+    if (!slug) throw new BadRequestException('A URL slug could not be generated from the title');
+    if (dto.options) {
+      const problem = validateOptions(dto.options);
+      if (problem) throw appError(400, 'INVALID_OPTIONS', problem);
+    }
+    const { title, summary, isSample, price, salePrice, ...input } = dto;
+    try {
+      const document: Record<string, unknown> = {
+        ...input,
+        slug,
+        title: { en: title },
+        ...(summary !== undefined && { summary: { en: summary } }),
+        ...(price != null && { price }),
+        ...(salePrice != null && { salePrice }),
+        source: 'admin',
+        published: dto.published ?? false,
+        detailsAreSample: isSample ?? false,
+      };
+      const created = await this.activities.create(document as any);
+      await this.cache.invalidate('catalog');
+      return { ...this.localize(created.toObject(), 'en'), id: String(created._id), isSample: Boolean(created.detailsAreSample) };
+    } catch (error) {
+      if ((error as { code?: number })?.code === 11000) throw new ConflictException(`An activity with slug "${slug}" already exists`);
+      throw error;
+    }
+  }
+
+  async remove(id: string) {
+    const deleted = await this.activities.findByIdAndDelete(id).lean().exec();
+    if (!deleted) throw new NotFoundException('Activity not found');
+    await this.cache.invalidate('catalog');
+    return { deleted: true, id };
+  }
+
   findBySlug(slug: string, locale = 'en') {
     return this.cache.wrap('catalog', `slug:${slug}:${locale}`, 60, () => this.findBySlugUncached(slug, locale));
   }
@@ -180,16 +258,28 @@ export class CatalogService {
       if (problem) throw appError(400, 'INVALID_OPTIONS', problem);
     }
     const set: Record<string, unknown> = {};
+    if (dto.title !== undefined) set.title = { en: dto.title };
+    if (dto.summary !== undefined) set.summary = { en: dto.summary };
+    for (const field of EDITABLE_CORE_FIELDS) {
+      const value = (dto as unknown as Record<string, unknown>)[field];
+      if (value !== undefined) set[field] = value;
+    }
     for (const field of DETAIL_FIELDS) {
       const value = (dto as unknown as Record<string, unknown>)[field];
       if (value !== undefined) set[field] = value;
     }
     // Staff-entered data is real; only the seed/import flags content as sample.
-    set.detailsAreSample = dto.detailsAreSample ?? false;
-    const updated = await this.activities
-      .findByIdAndUpdate(id, { $set: set }, { returnDocument: 'after', runValidators: true })
-      .lean()
-      .exec();
+    set.detailsAreSample = dto.isSample ?? dto.detailsAreSample ?? false;
+    let updated;
+    try {
+      updated = await this.activities
+        .findByIdAndUpdate(id, { $set: set }, { returnDocument: 'after', runValidators: true })
+        .lean()
+        .exec();
+    } catch (error) {
+      if ((error as { code?: number })?.code === 11000) throw new ConflictException(`An activity with slug "${dto.slug ?? ''}" already exists`);
+      throw error;
+    }
     if (!updated) throw new NotFoundException('Activity not found');
     return this.localize(updated, 'en');
   }

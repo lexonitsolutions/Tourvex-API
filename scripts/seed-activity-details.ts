@@ -54,6 +54,11 @@ function buildFromSample(sample: SampleActivityDetails, activity: Activity) {
     exclusions: sample.exclusions,
     howToRedeem: sample.howToRedeem,
     importantInfo: sample.importantInfo,
+    ...(sample.whatToBring && { whatToBring: sample.whatToBring }),
+    ...(sample.cancellationPolicy && { cancellationPolicy: sample.cancellationPolicy }),
+    ...(sample.itinerary && { itinerary: sample.itinerary }),
+    ...(sample.faqs && { faqs: sample.faqs }),
+    ...(sample.contentSections && { contentSections: sample.contentSections }),
     duration: sample.duration,
     location: { name: sample.locationName, address: sample.locationAddress },
     options: sample.options.map((option) => {

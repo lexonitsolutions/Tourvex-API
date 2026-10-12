@@ -2,6 +2,7 @@ import { plainToInstance } from 'class-transformer';
 import { validateSync } from 'class-validator';
 import { AvailabilityQueryDto, QuoteDto } from './activity-booking.dto';
 import { UpdateActivityDetailsDto } from './update-activity-details.dto';
+import { CreateActivityDto } from './create-activity.dto';
 
 function errors<T extends object>(cls: new () => T, value: Record<string, unknown>): string[] {
   const dto = plainToInstance(cls, value);
@@ -54,6 +55,7 @@ describe('UpdateActivityDetailsDto', () => {
 
   it('accepts an empty patch and a full detail block', () => {
     expect(errors(UpdateActivityDetailsDto, {})).toEqual([]);
+    expect(errors(UpdateActivityDetailsDto, { gallery: [] })).toEqual([]);
     expect(
       errors(UpdateActivityDetailsDto, {
         gallery: [{ url: 'https://example.com/a.jpg', alt: 'A' }],
@@ -79,14 +81,28 @@ describe('UpdateActivityDetailsDto', () => {
     expect(bad({ minPax: 0 })).toContain('options');
   });
 
-  it('rejects non-https gallery URLs, oversize lists and unknown fields', () => {
+  it('rejects unsafe gallery URLs, oversize lists and unknown fields', () => {
     expect(errors(UpdateActivityDetailsDto, { gallery: [{ url: 'javascript:alert(1)', alt: 'x' }] })).toContain('gallery');
     expect(
       errors(UpdateActivityDetailsDto, {
         gallery: Array.from({ length: 13 }, () => ({ url: 'https://example.com/a.jpg', alt: 'x' })),
       }),
     ).toContain('gallery');
-    expect(errors(UpdateActivityDetailsDto, { published: false })).toContain('published');
+    expect(errors(UpdateActivityDetailsDto, { published: false })).toEqual([]);
+    expect(errors(UpdateActivityDetailsDto, { unknownField: false })).toContain('unknownField');
     expect(errors(UpdateActivityDetailsDto, { freeCancellationHours: -1 })).toContain('freeCancellationHours');
+  });
+});
+
+describe('CreateActivityDto', () => {
+  it('requires a title and at least one destination', () => {
+    expect(errors(CreateActivityDto, { title: 'Dubai city tour', destinations: ['Dubai'] })).toEqual([]);
+    expect(errors(CreateActivityDto, { destinations: ['Dubai'] })).toContain('title');
+    expect(errors(CreateActivityDto, { title: 'Dubai city tour', destinations: [] })).toContain('destinations');
+  });
+
+  it('accepts manual publishing fields and validates the slug', () => {
+    expect(errors(CreateActivityDto, { title: 'Dubai city tour', slug: 'dubai-city-tour', destinations: ['Dubai'], published: false })).toEqual([]);
+    expect(errors(CreateActivityDto, { title: 'Dubai city tour', slug: 'Dubai Tour', destinations: ['Dubai'] })).toContain('slug');
   });
 });

@@ -13,7 +13,6 @@ import { buildPagination, PagingQueryDto, skipFor } from '../common/query/paging
 import { ParseObjectIdPipe } from '../holidays/parse-object-id.pipe';
 import { MediaService } from '../media/media.service';
 import { cleanOriginalName, IMAGE_MIME, MAX_UPLOAD_BYTES, probeImage, randomMediaFilename } from './cms.image';
-import { CmsService } from './cms.service';
 
 const uploader = multer({
   storage: multer.memoryStorage(),
@@ -70,7 +69,9 @@ function detectVideoExtension(buffer: Buffer, originalName?: string, declaredMim
 
 const view = (file: mongo.GridFSFile) => {
   const meta = (file.metadata ?? {}) as Record<string, unknown>;
-  const isVideo = typeof meta.contentType === 'string' && meta.contentType.startsWith('video/');
+  const isVideo =
+    (typeof meta.contentType === 'string' && meta.contentType.startsWith('video/')) ||
+    /\.(mp4|webm|mov|ogg)$/i.test(file.filename);
   return {
     id: file._id.toHexString(),
     url: isVideo ? `/videos/${file.filename}` : `/images/${file.filename}`,
@@ -92,7 +93,6 @@ const view = (file: mongo.GridFSFile) => {
 export class CmsMediaController {
   constructor(
     private readonly media: MediaService,
-    private readonly cms: CmsService,
   ) {}
 
   @Post()
@@ -215,6 +215,40 @@ export class CmsMediaController {
     return { items: files.map(view), pagination: buildPagination(query.page, query.limit, total) };
   }
 
+  @Get('videos')
+  @RequirePermission('cms.write')
+  @ApiOperation({ summary: 'Video media library, including legacy video uploads, newest first' })
+  async listVideos(@Query() query: PagingQueryDto, @Res({ passthrough: true }) response: Response) {
+    response.set('Cache-Control', 'no-store');
+    const { files, total } = await this.media.listFiles({
+      filenameContains: query.q?.trim() || undefined,
+      skip: skipFor(query.page, query.limit),
+      limit: query.limit,
+      kind: 'video',
+    });
+    return { items: files.map(view), pagination: buildPagination(query.page, query.limit, total) };
+  }
+
+  @Get('all')
+  @RequirePermission('cms.write')
+  @ApiOperation({ summary: 'All uploaded media, newest first' })
+  async listAll(@Query() query: PagingQueryDto, @Res({ passthrough: true }) response: Response) {
+    response.set('Cache-Control', 'no-store');
+    const { files, total } = await this.media.listFiles({ filenameContains: query.q?.trim() || undefined, skip: skipFor(query.page, query.limit), limit: query.limit, kind: 'all' });
+    return { items: files.map(view), pagination: buildPagination(query.page, query.limit, total) };
+  }
+
+  @Get(':id/references')
+  @RequirePermission('cms.write')
+  @ApiOperation({ summary: 'Show where a media item is used' })
+  async references(@Param('id', ParseObjectIdPipe) id: string, @Res({ passthrough: true }) response: Response) {
+    response.set('Cache-Control', 'no-store');
+    const file = await this.media.findFileById(id);
+    if (!file) throw appError(404, 'MEDIA_NOT_FOUND', 'Media not found');
+    const activeVersion = await this.media.isActiveFilenameVersion(file);
+    return { item: view(file), activeVersion, references: activeVersion ? await this.media.findApplicationReferences(file.filename) : [] };
+  }
+
   @Delete(':id')
   @RequirePermission('cms.write')
   @Audited('content_media', 'media.delete')
@@ -230,7 +264,8 @@ export class CmsMediaController {
     if ((file.metadata)?.source !== 'cms') {
       throw appError(403, 'MEDIA_PROTECTED', 'Only images uploaded through the CMS can be deleted');
     }
-    const references = await this.cms.findMediaReferences(file.filename);
+    const activeVersion = await this.media.isActiveFilenameVersion(file);
+    const references = activeVersion ? await this.media.findApplicationReferences(file.filename) : [];
     if (references.length) {
       throw new HttpException(
         {

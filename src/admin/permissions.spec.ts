@@ -183,6 +183,8 @@ describe('buildMenu', () => {
       const catalog = menu.find((item) => item.id === 'catalog');
       expect(catalog).toMatchObject({ label: 'Catalog', href: '/admin/catalog', icon: 'catalog' });
       expect(catalog?.children).toEqual([
+        { id: 'catalog-activities', label: 'Activities', href: '/admin/catalog/activities', icon: 'activities' },
+        { id: 'catalog-media', label: 'Media', href: '/admin/catalog/media', icon: 'catalog' },
         { id: 'catalog-holidays', label: 'Holidays', href: '/admin/catalog/holidays', icon: 'holidays' },
         { id: 'catalog-cruises', label: 'Cruises', href: '/admin/catalog/cruises', icon: 'cruises' },
         { id: 'catalog-events', label: 'Events', href: '/admin/catalog/events', icon: 'events' },
