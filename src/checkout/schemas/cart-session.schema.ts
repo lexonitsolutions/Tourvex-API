@@ -26,6 +26,15 @@ export class CartItem {
   @Prop({ type: String, required: true })
   activitySlug: string;
 
+  @Prop({ type: String, enum: ['activity', 'holiday', 'cruise', 'event'], default: 'activity' })
+  productType: 'activity' | 'holiday' | 'cruise' | 'event';
+
+  @Prop({ type: String })
+  productSlug?: string;
+
+  @Prop({ type: Boolean, default: false })
+  bookingOnly?: boolean;
+
   @Prop({ type: String, required: true })
   activityTitle: string;
 

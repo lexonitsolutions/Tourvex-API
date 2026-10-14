@@ -220,6 +220,11 @@ export class CreateHolidayDto {
   @IsBoolean()
   published?: boolean;
 
+  @ApiPropertyOptional({ default: false, description: 'Allow customers to add this package to the shared cart' })
+  @IsOptional()
+  @IsBoolean()
+  allowAddToCart?: boolean;
+
   @ApiPropertyOptional({ default: false })
   @IsOptional()
   @IsBoolean()

@@ -67,14 +67,15 @@ export class MediaService {
     limit: number;
     kind?: 'image' | 'video' | 'all';
   }): Promise<{ files: mongo.GridFSFile[]; total: number }> {
+    const videoRules = [
+      { 'metadata.contentType': { $regex: '^video/' } },
+      { filename: { $regex: '\\.(mp4|webm|mov|ogg)$', $options: 'i' } },
+    ];
     const filter: Record<string, unknown> = options.kind === 'all' ? {} : options.kind === 'video'
       ? {
-          $or: [
-            { 'metadata.contentType': { $regex: '^video/' } },
-            { filename: { $regex: '\\.(mp4|webm|mov|ogg)$', $options: 'i' } },
-          ],
+          $or: videoRules,
         }
-      : { 'metadata.contentType': { $regex: '^image/' } };
+      : { $nor: videoRules };
     if (options.filenameContains) {
       filter.filename = {
         $regex: options.filenameContains.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
@@ -93,6 +94,16 @@ export class MediaService {
       collection.countDocuments(filter),
     ]);
     return { files, total };
+  }
+
+  /** Complete GridFS inventory counts used by the media-library tabs. */
+  async mediaCounts(filenameContains?: string): Promise<{ all: number; images: number; videos: number }> {
+    const [all, images, videos] = await Promise.all([
+      this.listFiles({ filenameContains, skip: 0, limit: 1, kind: 'all' }),
+      this.listFiles({ filenameContains, skip: 0, limit: 1, kind: 'image' }),
+      this.listFiles({ filenameContains, skip: 0, limit: 1, kind: 'video' }),
+    ]);
+    return { all: all.total, images: images.total, videos: videos.total };
   }
 
   /** Finds stored content/catalog values that reference a media filename. Read-only and bounded per collection. */

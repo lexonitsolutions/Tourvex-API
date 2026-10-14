@@ -136,6 +136,9 @@ export class Cruise {
   published: boolean;
 
   @Prop({ type: Boolean, default: false })
+  allowAddToCart: boolean;
+
+  @Prop({ type: Boolean, default: false })
   isSample: boolean;
 
   /** Denormalised availability flags (see StockService); absent until the first refresh. */

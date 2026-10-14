@@ -11,23 +11,62 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  ValidateIf,
   Matches,
   Max,
   MaxLength,
   Min,
   MinLength,
-  ValidateIf,
 } from 'class-validator';
-import { QuoteDto } from '../../catalog/dto/activity-booking.dto';
+import { ISO_DATE_PATTERN, OPTION_ID_PATTERN } from '../../catalog/dto/activity-booking.dto';
 
 const trim = ({ value }: { value: unknown }) => (typeof value === 'string' ? value.trim() : value);
 
 /** Add an item to the cart, or modify one (`PATCH /checkout/cart/items/:itemId`). */
-export class CartItemDto extends QuoteDto {
-  @ApiProperty({ example: 'burj-khalifa-at-the-top-activities' })
+export class CartItemDto {
+  @ApiPropertyOptional({ enum: ['activity', 'holiday', 'cruise', 'event'], default: 'activity' })
+  @IsOptional()
+  @IsIn(['activity', 'holiday', 'cruise', 'event'])
+  productType?: 'activity' | 'holiday' | 'cruise' | 'event';
+
+  @ApiPropertyOptional({ example: 'burj-khalifa-at-the-top-activities' })
+  @ValidateIf((o: CartItemDto) => !o.productSlug)
   @IsString()
   @Matches(/^[a-z0-9][a-z0-9-]{0,199}$/, { message: 'activitySlug is invalid' })
-  activitySlug: string;
+  activitySlug?: string;
+
+  @ApiPropertyOptional({ example: 'maldives-escape' })
+  @ValidateIf((o: CartItemDto) => o.productType !== undefined && o.productType !== 'activity')
+  @IsString()
+  @Matches(/^[a-z0-9][a-z0-9-]{0,199}$/, { message: 'productSlug is invalid' })
+  productSlug?: string;
+
+  /** Existing direct booking action; it is not exposed as the standalone Add to Cart control. */
+  @ApiPropertyOptional({ default: false })
+  @IsOptional()
+  @IsBoolean()
+  bookingOnly?: boolean;
+
+  @ApiProperty()
+  @IsString()
+  @Matches(OPTION_ID_PATTERN, { message: 'optionId is invalid' })
+  optionId: string;
+
+  @ApiProperty({ example: '2026-10-05' })
+  @Matches(ISO_DATE_PATTERN, { message: 'date must be YYYY-MM-DD' })
+  date: string;
+
+  @ApiProperty({ minimum: 1 })
+  @IsInt()
+  @Min(1)
+  @Max(50)
+  adults: number;
+
+  @ApiProperty({ minimum: 0, default: 0 })
+  @IsInt()
+  @Min(0)
+  @Max(50)
+  children: number;
 }
 
 export class CartQueryDto {

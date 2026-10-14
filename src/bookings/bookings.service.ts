@@ -60,6 +60,11 @@ export interface ActivityBookingInput {
   taxSnapshot?: BookingTaxFields;
 }
 
+export interface PackageBookingInput extends Omit<ActivityBookingInput, 'activitySlug'> {
+  productType: 'holiday' | 'cruise' | 'event';
+  productSlug: string;
+}
+
 /** A confirmed booking created by staff from a holiday, cruise or event enquiry (offline payment). */
 export interface EnquiryBookingInput {
   customerId: string;
@@ -244,6 +249,50 @@ export class BookingsService {
       if (!existing) throw error;
       return existing;
     }
+  }
+
+  /** Creates a paid-checkout booking for a non-activity catalogue package. */
+  async createPackageBooking(input: PackageBookingInput, session?: ClientSession) {
+    const key = { orderReference: input.orderReference, cartItemId: input.cartItemId };
+    const document = {
+      reference: `TVX-${new Date().getUTCFullYear()}-${randomBytes(4).toString('hex').toUpperCase()}`,
+      customerId: new Types.ObjectId(input.customerId),
+      serviceType: input.productType,
+      title: input.title,
+      stockProductType: input.productType,
+      stockProductRef: input.productSlug,
+      stockVariantId: input.optionId,
+      activityImage: input.image,
+      activityLocation: input.location,
+      optionId: input.optionId,
+      optionName: input.optionName,
+      serviceDay: input.serviceDay,
+      serviceDate: new Date(`${input.serviceDay}T00:00:00.000Z`),
+      adults: input.adults,
+      children: input.children,
+      quantity: input.adults + input.children,
+      unitPrice: input.adultUnitPrice,
+      pickupRequired: false,
+      additional: input.additional,
+      customer: input.customer,
+      priceLines: input.priceLines,
+      subtotal: input.subtotal,
+      discount: input.discount,
+      tax: input.tax,
+      total: input.total,
+      promoCode: input.promoCode,
+      currency: 'AED',
+      refundable: input.refundable,
+      cancellationPolicy: input.refundable ? 'Refundability is subject to the package terms.' : 'Non-refundable.',
+      status: BookingStatus.PendingPayment,
+      holdExpiresAt: input.holdExpiresAt,
+      ...input.taxSnapshot,
+    };
+    return this.bookings.findOneAndUpdate(
+      key,
+      { $setOnInsert: Object.fromEntries(Object.entries(document).filter(([, value]) => value !== undefined)) },
+      { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true, session },
+    ).exec();
   }
 
   /**

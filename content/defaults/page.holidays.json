@@ -1,0 +1,122 @@
+{
+  "sections": [
+    {
+      "id": "holidays-hero",
+      "type": "holidaysHero",
+      "enabled": true,
+      "data": {
+        "banners": [
+          {
+            "id": "banner-dubai",
+            "title": "Dubai, your way",
+            "subtitle": "City breaks, desert evenings and family weeks",
+            "image": { "url": "/images/destination-03.jpg", "alt": "Dubai skyline with towers rising above the city" },
+            "video": { "url": "" },
+            "cta": { "label": "Explore Dubai packages", "href": "/holidays/destination/Dubai" },
+            "visible": true
+          },
+          {
+            "id": "banner-abudhabi",
+            "title": "Abu Dhabi, calm and cultured",
+            "subtitle": "Landmark architecture and quiet beaches",
+            "image": { "url": "/images/destination-05.jpg", "alt": "Classical architecture with columns" },
+            "video": { "url": "" },
+            "cta": { "label": "Explore Abu Dhabi packages", "href": "/holidays/destination/Abu%20Dhabi" },
+            "visible": true
+          },
+          {
+            "id": "banner-maldives",
+            "title": "Maldives island escapes",
+            "subtitle": "Lagoons, reefs and unhurried days",
+            "image": { "url": "/images/destination-01.jpg", "alt": "Resort shoreline with calm water" },
+            "video": { "url": "" },
+            "cta": { "label": "Explore Maldives packages", "href": "/holidays/destination/Maldives" },
+            "visible": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "holidays-recent",
+      "type": "holidaysRecent",
+      "enabled": true,
+      "data": {
+        "heading": "Recently Viewed",
+        "description": "Jump back into packages you were looking at.",
+        "show": true,
+        "items": [],
+        "showViewAll": true
+      }
+    },
+    {
+      "id": "holidays-cities",
+      "type": "holidaysCities",
+      "enabled": true,
+      "data": {
+        "heading": "Destination Cities",
+        "description": "Explore holiday destinations across our top cities.",
+        "show": true,
+        "items": [
+          { "id": "city-dubai", "name": "Dubai", "label": "Dubai", "image": { "url": "/images/destination-03.jpg", "alt": "Dubai" }, "video": { "url": "" }, "visible": true },
+          { "id": "city-abu-dhabi", "name": "Abu Dhabi", "label": "Abu Dhabi", "image": { "url": "/images/destination-05.jpg", "alt": "Abu Dhabi" }, "video": { "url": "" }, "visible": true },
+          { "id": "city-almaty", "name": "Almaty", "label": "Almaty", "image": { "url": "/images/destination-e.jpg", "alt": "Almaty" }, "video": { "url": "" }, "visible": true },
+          { "id": "city-male", "name": "Malé", "label": "Malé", "image": { "url": "/images/destination-01.jpg", "alt": "Malé" }, "video": { "url": "" }, "visible": true },
+          { "id": "city-istanbul", "name": "Istanbul", "label": "Istanbul", "image": { "url": "/images/destination-02.jpg", "alt": "Istanbul" }, "video": { "url": "" }, "visible": true },
+          { "id": "city-baku", "name": "Baku", "label": "Baku", "image": { "url": "/images/destination-d.jpg", "alt": "Baku" }, "video": { "url": "" }, "visible": true }
+        ],
+        "showViewAll": true
+      }
+    },
+    {
+      "id": "holidays-countries",
+      "type": "holidaysCountries",
+      "enabled": true,
+      "data": {
+        "heading": "Best Countries to Visit",
+        "description": "Pick a country and see what is on offer.",
+        "show": true,
+        "items": [
+          { "id": "country-uae", "name": "United Arab Emirates", "label": "United Arab Emirates", "image": { "url": "/images/destination-03.jpg", "alt": "United Arab Emirates" }, "video": { "url": "" }, "visible": true },
+          { "id": "country-kazakhstan", "name": "Kazakhstan", "label": "Kazakhstan", "image": { "url": "/images/destination-e.jpg", "alt": "Kazakhstan" }, "video": { "url": "" }, "visible": true },
+          { "id": "country-maldives", "name": "Maldives", "label": "Maldives", "image": { "url": "/images/destination-01.jpg", "alt": "Maldives" }, "video": { "url": "" }, "visible": true },
+          { "id": "country-turkiye", "name": "Türkiye", "label": "Türkiye", "image": { "url": "/images/destination-05.jpg", "alt": "Türkiye" }, "video": { "url": "" }, "visible": true },
+          { "id": "country-azerbaijan", "name": "Azerbaijan", "label": "Azerbaijan", "image": { "url": "/images/destination-d.jpg", "alt": "Azerbaijan" }, "video": { "url": "" }, "visible": true }
+        ],
+        "showViewAll": false
+      }
+    },
+    {
+      "id": "holidays-packages",
+      "type": "holidaysPackages",
+      "enabled": true,
+      "data": {
+        "heading": "Featured Holiday Packages",
+        "description": "Handpicked itineraries for memorable vacations.",
+        "packages": [
+          { "id": "pkg-1", "packageId": "dubai-skyline-city-break", "slug": "dubai-skyline-city-break", "title": "Dubai Skyline City Break", "image": { "url": "/images/destination-03.jpg", "alt": "Dubai Skyline City Break" }, "country": "United Arab Emirates", "duration": "4 days, 3 nights", "price": "AED 1,590" },
+          { "id": "pkg-2", "packageId": "dubai-family-fun-week", "slug": "dubai-family-fun-week", "title": "Dubai Family Fun Week", "image": { "url": "/images/destination-01.jpg", "alt": "Dubai Family Fun Week" }, "country": "United Arab Emirates", "duration": "6 days, 5 nights", "price": "AED 3,450" },
+          { "id": "pkg-3", "packageId": "dubai-stopover-express", "slug": "dubai-stopover-express", "title": "Dubai Stopover Express", "image": { "url": "/images/destination-03.jpg", "alt": "Dubai Stopover Express" }, "country": "United Arab Emirates", "duration": "3 days, 2 nights", "price": "AED 1,190" },
+          { "id": "pkg-4", "packageId": "abu-dhabi-cultural-escape", "slug": "abu-dhabi-cultural-escape", "title": "Abu Dhabi Cultural Escape", "image": { "url": "/images/destination-05.jpg", "alt": "Abu Dhabi Cultural Escape" }, "country": "United Arab Emirates", "duration": "4 days, 3 nights", "price": "AED 2,190" },
+          { "id": "pkg-5", "packageId": "almaty-mountain-valley-getaway", "slug": "almaty-mountain-valley-getaway", "title": "Almaty Mountain & Valley Getaway", "image": { "url": "/images/destination-e.jpg", "alt": "Almaty Mountain & Valley Getaway" }, "country": "Kazakhstan", "duration": "5 days, 4 nights", "price": "AED 2,850" },
+          { "id": "pkg-6", "packageId": "maldives-coral-reef-escape", "slug": "maldives-coral-reef-escape", "title": "Maldives Coral Reef Escape", "image": { "url": "/images/destination-01.jpg", "alt": "Maldives Coral Reef Escape" }, "country": "Maldives", "duration": "5 days, 4 nights", "price": "AED 4,890" }
+        ],
+        "showViewAll": true
+      }
+    },
+    {
+      "id": "holidays-why",
+      "type": "holidaysWhy",
+      "enabled": true,
+      "data": {
+        "heading": "Why book with us",
+        "items": [
+          { "id": "why-1", "title": "Handpicked hotels", "description": "Every hotel on our itineraries has been vetted by our team for comfort, service and location.", "image": { "url": "", "alt": "" }, "visible": true },
+          { "id": "why-2", "title": "Private transfers included", "description": "No waiting in taxi lines or coordinating buses. Your private driver meets you at each stage.", "image": { "url": "", "alt": "" }, "visible": true },
+          { "id": "why-3", "title": "Expert local guides", "description": "Discover the stories behind every sight with friendly, knowledgeable guides who know the area inside out.", "image": { "url": "", "alt": "" }, "visible": true },
+          { "id": "why-4", "title": "24/7 dedicated support", "description": "Our operations desk is always a message away on WhatsApp, ready to help with questions or adjustments.", "image": { "url": "", "alt": "" }, "visible": true }
+        ],
+        "cta": { "label": "Contact our team", "href": "/contact" }
+      }
+    }
+  ]
+}

@@ -36,6 +36,7 @@ import {
 import { OrdersService } from './orders.service';
 import { CartItem, CartSession, CartSessionDocument } from './schemas/cart-session.schema';
 import { PromoCode } from './schemas/promo-code.schema';
+import { PackageCartService, type PackageType } from './package-cart.service';
 
 export const MAX_CART_ITEMS = 5;
 /** A just-completed cart still answers a repeated pay request with the same result. */
@@ -58,6 +59,7 @@ export class CheckoutService implements OnModuleInit, OnModuleDestroy {
     private readonly orders: OrdersService,
     private readonly bookings: BookingsService,
     private readonly catalog: CatalogService,
+    private readonly packages: PackageCartService,
     private readonly payments: PaymentsService,
     private readonly currency: CurrencyService,
     private readonly settings: SettingsService,
@@ -150,7 +152,7 @@ export class CheckoutService implements OnModuleInit, OnModuleDestroy {
     if (cart && !same && cart.items.length >= MAX_CART_ITEMS) {
       throw appError(409, 'CART_FULL', `A cart can hold at most ${MAX_CART_ITEMS} activities`);
     }
-    const prepared = await this.catalog.prepareItem(dto.activitySlug, { ...dto, itemId }, now, cart?._id.toString());
+    const prepared = await this.prepare(dto, itemId, now, cart?._id.toString());
     // Adding the same option + date again REPLACES that item (travellers are set, not summed), so
     // a repeated "Proceed to pay" click is idempotent. Pick-up and additional details are kept.
     const item = this.buildItem(prepared, dto, itemId, same);
@@ -182,7 +184,7 @@ export class CheckoutService implements OnModuleInit, OnModuleDestroy {
     if (cart.items.some((i) => i.itemId !== itemId && this.sameKey(i, dto))) {
       throw appError(409, 'DUPLICATE_ITEM', 'Another item in your cart already has this option and date');
     }
-    const prepared = await this.catalog.prepareItem(dto.activitySlug, { ...dto, itemId }, now, cart._id.toString());
+    const prepared = await this.prepare(dto, itemId, now, cart._id.toString());
     const item = this.buildItem(prepared, dto, itemId, current);
     const items = cart.toObject().items.map((i) => (i.itemId === itemId ? item : i));
     return this.commitItems(cart, items, now, display);
@@ -309,16 +311,14 @@ export class CheckoutService implements OnModuleInit, OnModuleDestroy {
       // Re-validate availability and re-price every item on the server before taking payment.
       const items = [];
       for (const old of cart.toObject().items) {
-        const prepared = await this.catalog.prepareItem(
-          old.activitySlug,
-          { itemId: old.itemId, optionId: old.optionId, date: old.date, adults: old.adults, children: old.children },
-          now,
-          cart._id.toString(),
+        const prepared = await this.prepare(
+          { productType: old.productType, productSlug: old.productSlug, activitySlug: old.activitySlug, bookingOnly: old.bookingOnly, optionId: old.optionId, date: old.date, adults: old.adults, children: old.children },
+          old.itemId, now, cart._id.toString(),
         );
         items.push(
           this.buildItem(
             prepared,
-            { activitySlug: old.activitySlug, optionId: old.optionId, date: old.date, adults: old.adults, children: old.children },
+            { productType: old.productType, productSlug: old.productSlug, activitySlug: old.activitySlug, bookingOnly: old.bookingOnly, optionId: old.optionId, date: old.date, adults: old.adults, children: old.children },
             old.itemId,
             old,
           ),
@@ -478,7 +478,8 @@ export class CheckoutService implements OnModuleInit, OnModuleDestroy {
     const existing = await this.orders.findByCart(cartId);
     if (existing && existing.bookingReferences.length >= cart.items.length) return existing;
 
-    const keys = cart.items.map((item) => ({ slug: item.activitySlug, optionId: item.optionId, day: item.date }));
+    const activityItems = cart.items.filter((item) => (item.productType ?? 'activity') === 'activity');
+    const keys = activityItems.map((item) => ({ slug: item.activitySlug, optionId: item.optionId, day: item.date }));
     await this.capacity.ensureLocks(keys);
     const items = cart.items;
     const now = new Date();
@@ -491,8 +492,8 @@ export class CheckoutService implements OnModuleInit, OnModuleDestroy {
         if (order && order.bookingReferences.length >= items.length) return order;
         const orderReference = order?.orderReference ?? generateOrderReference();
 
-        await this.catalog.assertCapacity(
-          items.map((item) => ({ itemId: item.itemId, activitySlug: item.activitySlug, optionId: item.optionId, date: item.date, adults: item.adults, children: item.children })),
+        if (activityItems.length) await this.catalog.assertCapacity(
+          activityItems.map((item) => ({ itemId: item.itemId, activitySlug: item.activitySlug, optionId: item.optionId, date: item.date, adults: item.adults, children: item.children })),
           { orderReference, session, now },
         );
 
@@ -517,13 +518,13 @@ export class CheckoutService implements OnModuleInit, OnModuleDestroy {
         const references: string[] = [];
         for (const item of items) {
           // The tax rule that priced this line is frozen on the booking, so the invoice shows what the customer paid.
-          const det = (item.taxInfo as unknown as TaxDetermination | undefined) ?? (await this.tax.determineForProduct('activity', item.activitySlug));
-          const booking = await this.bookings.createActivityBooking(
-            {
+          const productType = item.productType ?? 'activity';
+          const productSlug = item.productSlug ?? item.activitySlug;
+          const det = (item.taxInfo as unknown as TaxDetermination | undefined) ?? (await this.tax.determineForProduct(productType, productSlug));
+          const bookingInput = {
               orderReference: order.orderReference,
               cartItemId: item.itemId,
               customerId: cart.userId.toString(),
-              activitySlug: item.activitySlug,
               title: item.activityTitle,
               image: item.image || undefined,
               location: item.locationName,
@@ -549,9 +550,10 @@ export class CheckoutService implements OnModuleInit, OnModuleDestroy {
               refundable: item.refundable,
               freeCancellationUntil: item.freeCancellationUntil,
               holdExpiresAt: cart.expiresAt,
-            },
-            session,
-          );
+            };
+          const booking = productType === 'activity'
+            ? await this.bookings.createActivityBooking({ ...bookingInput, activitySlug: item.activitySlug }, session)
+            : await this.bookings.createPackageBooking({ ...bookingInput, productType, productSlug } as any, session);
           references.push(booking.reference);
         }
         await this.orders.attachBookings(order.orderReference, references, session);
@@ -598,15 +600,27 @@ export class CheckoutService implements OnModuleInit, OnModuleDestroy {
     };
   }
 
-  private sameKey(item: CartItem, dto: { activitySlug: string; optionId: string; date: string }) {
+  private sameKey(item: CartItem, dto: CartItemDto) {
+    const type = dto.productType ?? 'activity';
+    const slug = dto.productSlug ?? dto.activitySlug;
     return (
-      item.activitySlug === dto.activitySlug && item.optionId === dto.optionId && item.date === dto.date
+      (item.productType ?? 'activity') === type && (item.productSlug ?? item.activitySlug) === slug && item.optionId === dto.optionId && item.date === dto.date
     );
+  }
+
+  private prepare(dto: CartItemDto, itemId: string, now: Date, cartId?: string) {
+    const type = dto.productType ?? 'activity';
+    const slug = dto.productSlug ?? dto.activitySlug;
+    if (!slug) throw appError(400, 'PRODUCT_REQUIRED', 'A package slug is required');
+    const input = { itemId, optionId: dto.optionId, date: dto.date, adults: dto.adults, children: dto.children };
+    return type === 'activity'
+      ? this.catalog.prepareItem(slug, input, now, cartId, !dto.bookingOnly)
+      : this.packages.prepare(type as PackageType, slug, input);
   }
 
   private buildItem(
     prepared: PreparedItem,
-    dto: { activitySlug: string; optionId: string; date: string; adults: number; children: number },
+    dto: CartItemDto,
     itemId: string,
     previous?: CartItem,
   ): CartItem {
@@ -615,6 +629,9 @@ export class CheckoutService implements OnModuleInit, OnModuleDestroy {
     return {
       itemId,
       activitySlug: activity.slug,
+      productType: dto.productType ?? 'activity',
+      productSlug: dto.productSlug ?? activity.slug,
+      bookingOnly: Boolean(dto.bookingOnly),
       activityTitle: activity.title,
       image: activity.image,
       ...(activity.locationName && { locationName: activity.locationName }),
@@ -662,12 +679,14 @@ export class CheckoutService implements OnModuleInit, OnModuleDestroy {
   ) {
     // Every line is taxed by the country where its service is delivered (see the tax module).
     const determinations = new Map<string, TaxDetermination>();
-    for (const slug of new Set(items.map((item) => item.activitySlug))) {
-      determinations.set(slug, await this.tax.determineForProduct('activity', slug));
+    for (const item of items) {
+      const key = `${item.productType ?? 'activity'}:${item.productSlug ?? item.activitySlug}`;
+      if (!determinations.has(key)) determinations.set(key, await this.tax.determineForProduct(item.productType ?? 'activity', item.productSlug ?? item.activitySlug));
     }
     const inputs = items.map((item) => {
-      const det = determinations.get(item.activitySlug)!;
-      return { slug: item.activitySlug, subtotalMinor: item.subtotalMinor, taxPercent: det.percent, taxInclusive: det.pricesIncludeTax };
+      const key = `${item.productType ?? 'activity'}:${item.productSlug ?? item.activitySlug}`;
+      const det = determinations.get(key)!;
+      return { slug: item.productSlug ?? item.activitySlug, subtotalMinor: item.subtotalMinor, taxPercent: det.percent, taxInclusive: det.pricesIncludeTax };
     });
     let promo: PromoCode | null = null;
     if (cart.promoCode) {
@@ -681,7 +700,7 @@ export class CheckoutService implements OnModuleInit, OnModuleDestroy {
       item.discountMinor = final.items[i].discountMinor;
       item.taxMinor = final.items[i].taxMinor;
       item.totalMinor = final.items[i].totalMinor;
-      item.taxInfo = determinations.get(item.activitySlug) as unknown as Record<string, unknown>;
+      item.taxInfo = determinations.get(`${item.productType ?? 'activity'}:${item.productSlug ?? item.activitySlug}`) as unknown as Record<string, unknown>;
     });
     cart.promoCode = promo?.code;
     cart.subtotalMinor = final.subtotalMinor;
@@ -727,6 +746,8 @@ export class CheckoutService implements OnModuleInit, OnModuleDestroy {
         image: item.image,
         ...(item.locationName && { location: item.locationName }),
       },
+      productType: item.productType ?? 'activity',
+      productSlug: item.productSlug ?? item.activitySlug,
       option: {
         id: item.optionId,
         name: item.optionName,
@@ -782,7 +803,9 @@ export class CheckoutService implements OnModuleInit, OnModuleDestroy {
     const checks =
       cart.status === 'open'
         ? await Promise.all(
-            cart.items.map((item) => this.catalog.lineAvailability(item.activitySlug, item, now, cart._id.toString())),
+            cart.items.map((item) => (item.productType ?? 'activity') === 'activity'
+              ? this.catalog.lineAvailability(item.activitySlug, item, now, cart._id.toString())
+              : this.packages.available(item.productType as PackageType, item.productSlug ?? item.activitySlug, item)),
           )
         : [];
     return {

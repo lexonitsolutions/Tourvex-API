@@ -1,4 +1,4 @@
-import { Controller, Delete, Get, HttpException, Param, Post, Query, Req, Res, UseInterceptors } from '@nestjs/common';
+import { Controller, Delete, Get, Param, Post, Query, Req, Res, UseInterceptors } from '@nestjs/common';
 import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
@@ -13,6 +13,13 @@ import { buildPagination, PagingQueryDto, skipFor } from '../common/query/paging
 import { ParseObjectIdPipe } from '../holidays/parse-object-id.pipe';
 import { MediaService } from '../media/media.service';
 import { cleanOriginalName, IMAGE_MIME, MAX_UPLOAD_BYTES, probeImage, randomMediaFilename } from './cms.image';
+import { IsIn, IsOptional } from 'class-validator';
+
+class MediaLibraryQueryDto extends PagingQueryDto {
+  @IsOptional()
+  @IsIn(['all', 'image', 'video'])
+  kind: 'all' | 'image' | 'video' = 'all';
+}
 
 const uploader = multer({
   storage: multer.memoryStorage(),
@@ -232,10 +239,14 @@ export class CmsMediaController {
   @Get('all')
   @RequirePermission('cms.write')
   @ApiOperation({ summary: 'All uploaded media, newest first' })
-  async listAll(@Query() query: PagingQueryDto, @Res({ passthrough: true }) response: Response) {
+  async listAll(@Query() query: MediaLibraryQueryDto, @Res({ passthrough: true }) response: Response) {
     response.set('Cache-Control', 'no-store');
-    const { files, total } = await this.media.listFiles({ filenameContains: query.q?.trim() || undefined, skip: skipFor(query.page, query.limit), limit: query.limit, kind: 'all' });
-    return { items: files.map(view), pagination: buildPagination(query.page, query.limit, total) };
+    const search = query.q?.trim() || undefined;
+    const [{ files, total }, counts] = await Promise.all([
+      this.media.listFiles({ filenameContains: search, skip: skipFor(query.page, query.limit), limit: query.limit, kind: query.kind }),
+      this.media.mediaCounts(search),
+    ]);
+    return { items: files.map(view), counts, pagination: buildPagination(query.page, query.limit, total) };
   }
 
   @Get(':id/references')
@@ -252,7 +263,7 @@ export class CmsMediaController {
   @Delete(':id')
   @RequirePermission('cms.write')
   @Audited('content_media', 'media.delete')
-  @ApiOperation({ summary: 'Delete an uploaded image (409 when a document still uses it)' })
+  @ApiOperation({ summary: 'Permanently delete a media file and its GridFS chunks after UI confirmation' })
   async remove(
     @Param('id', ParseObjectIdPipe) id: string,
     @Req() request: Request,
@@ -261,28 +272,14 @@ export class CmsMediaController {
     response.set('Cache-Control', 'no-store');
     const file = await this.media.findFileById(id);
     if (!file) throw appError(404, 'MEDIA_NOT_FOUND', 'Image not found');
-    if ((file.metadata)?.source !== 'cms') {
-      throw appError(403, 'MEDIA_PROTECTED', 'Only images uploaded through the CMS can be deleted');
-    }
     const activeVersion = await this.media.isActiveFilenameVersion(file);
     const references = activeVersion ? await this.media.findApplicationReferences(file.filename) : [];
-    if (references.length) {
-      throw new HttpException(
-        {
-          statusCode: 409,
-          code: 'MEDIA_IN_USE',
-          message: 'This image is still used by content and cannot be deleted',
-          references,
-        },
-        409,
-      );
-    }
     await this.media.deleteFile(file._id);
     setAuditContext(request, {
       entityId: id,
-      summary: `Deleted image ${file.filename}`,
+      summary: `Permanently deleted media ${file.filename}${references.length ? ` used in ${references.length} location(s)` : ''}`,
       changes: [{ field: 'filename', from: file.filename, to: null }],
     });
-    return { id, deleted: true };
+    return { id, deleted: true, removedReferences: references.length };
   }
 }

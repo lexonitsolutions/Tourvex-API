@@ -280,6 +280,11 @@ export class CreateCruiseDto {
   @IsBoolean()
   published?: boolean;
 
+  @ApiPropertyOptional({ default: false, description: 'Allow customers to add this cruise to the shared cart' })
+  @IsOptional()
+  @IsBoolean()
+  allowAddToCart?: boolean;
+
   @ApiPropertyOptional({ default: false })
   @IsOptional()
   @IsBoolean()

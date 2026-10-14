@@ -390,6 +390,7 @@ export class VisasService {
       documents: doc.documents ?? [],
       steps: ((doc.steps ?? []) as Lean[]).map((s) => ({ title: s.title, description: s.description })),
       faqs: ((doc.faqs ?? []) as Lean[]).map((f) => ({ question: f.question, answer: f.answer })),
+      gallery: ((doc.gallery ?? []) as Lean[]).map((image) => ({ url: image.url, alt: image.alt ?? '' })),
       notes: doc.notes ?? '',
       sections: doc.sections ?? [],
       ...(includeSampleFlag ? { isSample: Boolean(doc.isSample) } : {}),

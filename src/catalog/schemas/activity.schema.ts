@@ -213,6 +213,9 @@ export class Activity {
   @Prop({ type: Boolean, default: true, index: true })
   published: boolean;
 
+  @Prop({ type: Boolean, default: false })
+  allowAddToCart: boolean;
+
   // Detail fields (absent until real or sample details are loaded).
   @Prop({ type: [GalleryImageSchema], default: undefined })
   gallery?: GalleryImage[];

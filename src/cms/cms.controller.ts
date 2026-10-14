@@ -48,7 +48,14 @@ function sendPublic(
 export class CmsPublicController {
   constructor(private readonly cms: CmsService) {}
 
-  // The batch route must stay above ':key'.
+  // The batch route and specific routes must stay above ':key'.
+  @Public()
+  @Get('stats/homepage')
+  @ApiOperation({ summary: 'Dynamic achievement statistics for Karnish Tourism homepage' })
+  async homepageStats(@Query('foundingYear', new ParseIntPipe({ optional: true })) foundingYear?: number) {
+    return this.cms.getHomepageStats(foundingYear);
+  }
+
   @Public()
   @Get()
   @ApiOperation({ summary: 'Published content for several keys in one round trip (max 10)' })
@@ -78,6 +85,13 @@ export class CmsAdminController {
 
   private static noStore(response: Response): void {
     response.set('Cache-Control', 'no-store');
+  }
+
+  @Get('stats/homepage')
+  @RequirePermission('cms.read')
+  @ApiOperation({ summary: 'Dynamic achievement statistics for homepage preview (admin)' })
+  async homepageStats(@Query('foundingYear', new ParseIntPipe({ optional: true })) foundingYear?: number) {
+    return this.cms.getHomepageStats(foundingYear);
   }
 
   @Get()

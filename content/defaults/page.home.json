@@ -419,6 +419,63 @@
           }
         ]
       }
+    },
+    {
+      "id": "statistics",
+      "type": "statistics",
+      "enabled": true,
+      "data": {
+        "eyebrow": "PROVEN EXCELLENCE",
+        "heading": "Our Journey in Numbers",
+        "subheading": "A legacy of trust, remarkable journeys, and unforgettable experiences across the globe.",
+        "foundingYear": 2011,
+        "items": [
+          {
+            "id": "stat-travelers",
+            "key": "travelers",
+            "title": "Happy Travelers",
+            "description": "Satisfied guests hosted with premium service worldwide.",
+            "autoCalculate": true,
+            "manualValue": 25000,
+            "prefix": "",
+            "suffix": "+",
+            "enabled": true
+          },
+          {
+            "id": "stat-years",
+            "key": "years",
+            "title": "Years of Excellence",
+            "description": "Crafting extraordinary tourism & journeys since 2011.",
+            "autoCalculate": true,
+            "manualValue": 15,
+            "prefix": "",
+            "suffix": "+",
+            "enabled": true
+          },
+          {
+            "id": "stat-trips",
+            "key": "trips",
+            "title": "Trip Options Available",
+            "description": "Curated holiday packages, activities & bespoke tours.",
+            "autoCalculate": true,
+            "manualValue": 150,
+            "prefix": "",
+            "suffix": "+",
+            "enabled": true
+          },
+          {
+            "id": "stat-places",
+            "key": "places",
+            "title": "Unique Places to Explore",
+            "description": "Handpicked worldwide destinations & iconic cities.",
+            "autoCalculate": true,
+            "manualValue": 45,
+            "prefix": "",
+            "suffix": "+",
+            "enabled": true
+          }
+        ]
+      }
     }
   ]
 }

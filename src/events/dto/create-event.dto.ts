@@ -101,6 +101,49 @@ export class EventTicketTypeDto {
   @ValidateNested()
   @Type(() => EventMoneyDto)
   price?: EventMoneyDto | null;
+
+  @ApiPropertyOptional({ type: EventMoneyDto, nullable: true, description: 'Optional crossed-out price' })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => EventMoneyDto)
+  originalPrice?: EventMoneyDto | null;
+
+  @ApiPropertyOptional({ example: 'Best value' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(40)
+  badge?: string;
+
+  @ApiPropertyOptional({ minimum: 0, nullable: true })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  availableQuantity?: number | null;
+
+  @ApiPropertyOptional({ minimum: 1, maximum: 50, nullable: true })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(50)
+  maxPerBooking?: number | null;
+
+  @ApiPropertyOptional({ description: 'ISO date/time after which this package can no longer be requested' })
+  @IsOptional()
+  @IsISO8601({ strict: true })
+  salesEndAt?: string | null;
+
+  @ApiPropertyOptional({ default: false })
+  @IsOptional()
+  @IsBoolean()
+  refundable?: boolean;
+
+  @ApiPropertyOptional({ type: [String], description: 'Short benefits included in this package' })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(10)
+  @IsString({ each: true })
+  @MaxLength(120, { each: true })
+  benefits?: string[];
 }
 
 export class CreateEventDto {
@@ -260,6 +303,11 @@ export class CreateEventDto {
   @IsOptional()
   @IsBoolean()
   published?: boolean;
+
+  @ApiPropertyOptional({ default: false, description: 'Allow customers to add this event to the shared cart' })
+  @IsOptional()
+  @IsBoolean()
+  allowAddToCart?: boolean;
 
   @ApiPropertyOptional({ default: false })
   @IsOptional()

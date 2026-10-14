@@ -45,7 +45,7 @@ import { Event } from './schemas/event.schema';
 const CURRENCY = 'AED';
 const HOME_BANNER_LIMIT = 10;
 const HOME_LIST_LIMIT = 20;
-const HOME_TRENDING_CITIES = 3;
+const HOME_TRENDING_CITIES = 10;
 const HAPPENING_SOON_DAYS = 30;
 const SECTION_ITEM_LIMIT = 12;
 const RELATED_LIMIT = 6;
@@ -69,6 +69,7 @@ const CARD_FIELDS = {
   price: 1,
   tags: 1,
   published: 1,
+  allowAddToCart: 1,
   isSample: 1,
   updatedAt: 1,
 };
@@ -264,7 +265,7 @@ export class EventsService {
     const [docs, total, facets] = await Promise.all([
       this.events.aggregate<Lean>(pipeline).exec(),
       this.events.countDocuments(filter).exec(),
-      this.facets(base, now),
+      this.facets(base, now, !admin),
     ]);
     return {
       items: docs.map((doc) =>
@@ -483,7 +484,7 @@ export class EventsService {
   }
 
   /** Facets over the events that have an upcoming session (each event counted once). */
-  private async facets(base: Record<string, unknown>, now: Date) {
+  private async facets(base: Record<string, unknown>, now: Date, upcomingOnly = true) {
     const floor = startOfTodayUtc(now);
     const count = (field: string, limit: number): PipelineStage.FacetPipelineStage[] => [
       { $group: { _id: `$${field}`, count: { $sum: 1 } } },
@@ -493,7 +494,7 @@ export class EventsService {
     ];
     const [result] = await this.events
       .aggregate<Record<'cities' | 'categories' | 'months', { name: string; count: number }[]>>([
-        { $match: { ...base, 'sessions.startsAt': { $gte: floor } } },
+        { $match: upcomingOnly ? { ...base, 'sessions.startsAt': { $gte: floor } } : base },
         {
           $facet: {
             cities: count('city', FACET_LIMIT),
@@ -553,6 +554,7 @@ export class EventsService {
       durationMinutes: doc.durationMinutes ?? null,
       price: derivePrice(doc),
       tags: doc.tags ?? [],
+      allowAddToCart: Boolean(doc.allowAddToCart),
     };
   }
 
@@ -571,6 +573,13 @@ export class EventsService {
         type: t.type,
         description: t.description ?? '',
         price: this.money(t.price),
+        originalPrice: this.money(t.originalPrice),
+        badge: t.badge ?? '',
+        availableQuantity: t.availableQuantity ?? null,
+        maxPerBooking: t.maxPerBooking ?? null,
+        salesEndAt: t.salesEndAt ? new Date(t.salesEndAt).toISOString() : null,
+        refundable: Boolean(t.refundable),
+        benefits: t.benefits ?? [],
       })),
       highlights: doc.highlights ?? [],
       inclusions: doc.inclusions ?? [],
@@ -579,7 +588,7 @@ export class EventsService {
       venueAddress: doc.venueAddress ?? '',
       notes: doc.notes ?? '',
       ...(includeSampleFlag ? { isSample: Boolean(doc.isSample) } : {}),
-      ...(admin ? { published: doc.published, popularity: doc.popularity } : {}),
+      ...(admin ? { published: doc.published, popularity: doc.popularity, allowAddToCart: Boolean(doc.allowAddToCart) } : {}),
       updatedAt: new Date(doc.updatedAt).toISOString(),
     };
   }

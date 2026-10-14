@@ -48,6 +48,27 @@ export class EventTicketType {
 
   @Prop({ type: EventMoneySchema, default: null })
   price?: EventMoney | null;
+
+  @Prop({ type: EventMoneySchema, default: null })
+  originalPrice?: EventMoney | null;
+
+  @Prop({ type: String, default: '', trim: true })
+  badge?: string;
+
+  @Prop({ type: Number, min: 0, default: null })
+  availableQuantity?: number | null;
+
+  @Prop({ type: Number, min: 1, default: null })
+  maxPerBooking?: number | null;
+
+  @Prop({ type: Date, default: null })
+  salesEndAt?: Date | null;
+
+  @Prop({ type: Boolean, default: false })
+  refundable?: boolean;
+
+  @Prop({ type: [String], default: [] })
+  benefits?: string[];
 }
 export const EventTicketTypeSchema = SchemaFactory.createForClass(EventTicketType);
 
@@ -125,6 +146,9 @@ export class Event {
 
   @Prop({ type: Boolean, default: true })
   published: boolean;
+
+  @Prop({ type: Boolean, default: false })
+  allowAddToCart: boolean;
 
   @Prop({ type: Boolean, default: false })
   isSample: boolean;

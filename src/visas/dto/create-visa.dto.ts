@@ -59,6 +59,23 @@ export class VisaFaqDto {
   answer: string;
 }
 
+export class VisaGalleryImageDto {
+  @ApiProperty({ example: '/api/v1/media/images/uae-dubai.webp' })
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(500)
+  @Matches(/^(https:\/\/|\/images\/|\/api\/v1\/media\/images\/)\S+$/, {
+    message: 'gallery image url must be an https URL or a supported site image path',
+  })
+  url: string;
+
+  @ApiPropertyOptional({ example: 'Dubai skyline at sunset' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  alt?: string;
+}
+
 export class CreateVisaDto {
   @ApiPropertyOptional({ description: 'Generated from the title when omitted', example: 'turkiye-evisa' })
   @IsOptional()
@@ -168,6 +185,14 @@ export class CreateVisaDto {
   @ValidateNested({ each: true })
   @Type(() => VisaFaqDto)
   faqs?: VisaFaqDto[];
+
+  @ApiPropertyOptional({ type: [VisaGalleryImageDto], description: 'Famous tourist places shown on the visa detail page' })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(12)
+  @ValidateNested({ each: true })
+  @Type(() => VisaGalleryImageDto)
+  gallery?: VisaGalleryImageDto[];
 
   @ApiPropertyOptional({ description: 'Short disclaimer shown on the page' })
   @IsOptional()

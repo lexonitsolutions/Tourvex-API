@@ -34,6 +34,16 @@ export class VisaFaq {
 }
 export const VisaFaqSchema = SchemaFactory.createForClass(VisaFaq);
 
+@Schema({ _id: false })
+export class VisaGalleryImage {
+  @Prop({ type: String, required: true, trim: true })
+  url: string;
+
+  @Prop({ type: String, default: '', trim: true })
+  alt: string;
+}
+export const VisaGalleryImageSchema = SchemaFactory.createForClass(VisaGalleryImage);
+
 @Schema({ timestamps: true, collection: 'visas' })
 export class Visa {
   _id: Types.ObjectId;
@@ -88,6 +98,9 @@ export class Visa {
 
   @Prop({ type: [VisaFaqSchema], default: [] })
   faqs: VisaFaq[];
+
+  @Prop({ type: [VisaGalleryImageSchema], default: [] })
+  gallery: VisaGalleryImage[];
 
   @Prop({ type: String, default: '', trim: true })
   notes: string;

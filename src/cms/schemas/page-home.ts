@@ -1,5 +1,5 @@
 import type { DocumentSchema, SectionSchema } from '../cms.types';
-import { color, image, link, select, text, textarea, video } from './fields';
+import { color, image, link, number, select, text, textarea, toggle, video } from './fields';
 
 const heading = (label = 'Heading') => text('heading', label, 120, { required: true });
 const subheading = () => text('subheading', 'Subheading', 200);
@@ -72,6 +72,48 @@ const categoryTiles: SectionSchema = {
         color('gradientFrom', 'Gradient start', { required: true }),
         color('gradientMid', 'Gradient middle', { required: true }),
         color('gradientTo', 'Gradient end', { required: true }),
+      ],
+    },
+  ],
+};
+
+const statistics: SectionSchema = {
+  type: 'statistics',
+  label: 'Company statistics',
+  description: 'Interactive animated counters showcasing achievements and travel offerings with airplane journey animation.',
+  icon: 'bar-chart-3',
+  single: true,
+  canDisable: true,
+  fields: [
+    text('eyebrow', 'Eyebrow badge', 60),
+    heading('Section Heading'),
+    subheading(),
+    number('foundingYear', 'Company founding year', 1980, 2030, {
+      help: 'Used to dynamically calculate Years of Excellence.',
+    }),
+    {
+      name: 'items',
+      type: 'list',
+      label: 'Statistics cards',
+      itemLabel: 'Statistic',
+      min: 1,
+      max: 6,
+      fields: [
+        text('key', 'Metric identifier (travelers, years, trips, places)', 40, { required: true }),
+        text('title', 'Statistic Title', 80, { required: true }),
+        text('description', 'Description / Caption', 140, { required: true }),
+        toggle('autoCalculate', 'Calculate dynamically from database records', {
+          help: 'When enabled and database records exist, dynamically updates. When off, manual value is used.',
+        }),
+        number('manualValue', 'Manual / verified count', 0, 10000000, {
+          required: true,
+          help: 'Verified value to display if dynamic count is unavailable or manual override is desired.',
+        }),
+        text('prefix', 'Prefix (optional)', 10),
+        text('suffix', 'Suffix (e.g. +, %, k)', 10),
+        toggle('enabled', 'Show this statistic card', {
+          help: 'Toggle to show or hide this individual card.',
+        }),
       ],
     },
   ],
@@ -305,6 +347,7 @@ export const HOME_SECTION_SCHEMAS: SectionSchema[] = [
   exploreByExperience,
   partners,
   why,
+  statistics,
 ];
 
 export const PAGE_HOME_SCHEMA: DocumentSchema = {

@@ -9,7 +9,7 @@ import { checkRegistry, DOCUMENT_SCHEMAS, getDocumentSchema, isSupportedLocale, 
 describe('schema registry', () => {
   it('is internally consistent', () => expect(checkRegistry()).toEqual([]));
   it('exposes the Phase A documents', () => {
-    expect(listDocumentKeys()).toEqual(['page.home', 'page.activities', 'global.header', 'global.footer', 'global.seo']);
+    expect(listDocumentKeys()).toEqual(['page.home', 'page.activities', 'page.events', 'page.holidays', 'page.voyager', 'global.header', 'global.footer', 'global.seo']);
     expect(getDocumentSchema('nope')).toBeUndefined();
     expect(isSupportedLocale('en')).toBe(true);
     expect(isSupportedLocale('ar')).toBe(false);

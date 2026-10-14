@@ -1,0 +1,177 @@
+{
+  "sections": [
+    {
+      "id": "voyager-hero",
+      "type": "voyagerHero",
+      "enabled": true,
+      "data": {
+        "banners": [
+          {
+            "id": "banner-dubai",
+            "title": "Sail from Dubai",
+            "subtitle": "Gulf voyages with the skyline behind you",
+            "image": { "url": "/images/cruise-01.jpg", "alt": "Sail from Dubai" },
+            "video": { "url": "" },
+            "cta": { "label": "Explore Dubai sailings", "href": "/cruises/from/Dubai" },
+            "visible": true
+          },
+          {
+            "id": "banner-istanbul",
+            "title": "Mediterranean escapes from Istanbul",
+            "subtitle": "Aegean islands, ancient coastlines and Turkish harbours",
+            "image": { "url": "/images/cruise-02.jpg", "alt": "Mediterranean escapes from Istanbul" },
+            "video": { "url": "" },
+            "cta": { "label": "Explore Istanbul sailings", "href": "/cruises/from/Istanbul" },
+            "visible": true
+          },
+          {
+            "id": "banner-singapore",
+            "title": "Southeast Asia from Singapore",
+            "subtitle": "Island beaches, heritage towns and street food",
+            "image": { "url": "/images/cruise-04.jpg", "alt": "Southeast Asia from Singapore" },
+            "video": { "url": "" },
+            "cta": { "label": "Explore Singapore sailings", "href": "/cruises/from/Singapore" },
+            "visible": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "voyager-cities",
+      "type": "voyagerCities",
+      "enabled": true,
+      "data": {
+        "heading": "Explore Cruises by Departure City",
+        "description": "Choose where you would like to set sail from.",
+        "show": true,
+        "items": [
+          { "id": "city-dubai", "name": "Dubai", "label": "Dubai", "image": { "url": "/images/cruise-03.jpg", "alt": "Dubai" }, "video": { "url": "" }, "visible": true },
+          { "id": "city-abu-dhabi", "name": "Abu Dhabi", "label": "Abu Dhabi", "image": { "url": "/images/cruise-01.jpg", "alt": "Abu Dhabi" }, "video": { "url": "" }, "visible": true },
+          { "id": "city-istanbul", "name": "Istanbul", "label": "Istanbul", "image": { "url": "/images/cruise-02.jpg", "alt": "Istanbul" }, "video": { "url": "" }, "visible": true },
+          { "id": "city-singapore", "name": "Singapore", "label": "Singapore", "image": { "url": "/images/cruise-02.jpg", "alt": "Singapore" }, "video": { "url": "" }, "visible": true },
+          { "id": "city-barcelona", "name": "Barcelona", "label": "Barcelona", "image": { "url": "/images/cruise-04.jpg", "alt": "Barcelona" }, "video": { "url": "" }, "visible": true },
+          { "id": "city-jeddah", "name": "Jeddah", "label": "Jeddah", "image": { "url": "/images/cruise-01.jpg", "alt": "Jeddah" }, "video": { "url": "" }, "visible": true }
+        ]
+      }
+    },
+    {
+      "id": "voyager-countries",
+      "type": "voyagerCountries",
+      "enabled": true,
+      "data": {
+        "heading": "Best Countries to Visit",
+        "description": "Pick a country and see the sailings departing from it.",
+        "show": true,
+        "items": [
+          { "id": "country-saudi", "name": "Saudi Arabia", "label": "Saudi Arabia", "image": { "url": "/images/cruise-01.jpg", "alt": "Saudi Arabia" }, "video": { "url": "" }, "visible": true },
+          { "id": "country-singapore", "name": "Singapore", "label": "Singapore", "image": { "url": "/images/cruise-02.jpg", "alt": "Singapore" }, "video": { "url": "" }, "visible": true },
+          { "id": "country-uae", "name": "United Arab Emirates", "label": "United Arab Emirates", "image": { "url": "/images/cruise-03.jpg", "alt": "United Arab Emirates" }, "video": { "url": "" }, "visible": true },
+          { "id": "country-spain", "name": "Spain", "label": "Spain", "image": { "url": "/images/cruise-04.jpg", "alt": "Spain" }, "video": { "url": "" }, "visible": true }
+        ]
+      }
+    },
+    {
+      "id": "voyager-yachts",
+      "type": "voyagerYachts",
+      "enabled": true,
+      "data": {
+        "heading": "Luxury Yachts & Private Charters",
+        "description": "Private experiences on the water.",
+        "show": true,
+        "yachts": [
+          {
+            "id": "yacht-xclusive",
+            "slug": "xclusive-superyacht-experience",
+            "title": "Xclusive Superyacht Experience",
+            "image": { "url": "https://karnishtourism.com/wp-content/uploads/2025/03/xclusive-superyacht-dubai-tour-410x250.jpg", "alt": "Xclusive Superyacht Experience" },
+            "category": "Superyacht",
+            "capacity": "Shared Superyacht",
+            "duration": "3 Hours",
+            "price": "AED 300",
+            "destination": "Dubai Marina",
+            "description": "Sail through Dubai Marina, JBR, and Atlantis on a multi-deck luxury superyacht with gourmet dining and open decks."
+          },
+          {
+            "id": "yacht-lotus",
+            "slug": "lotus-mega-yacht-mega-cruise-dubai",
+            "title": "Lotus Mega Yacht Dinner Cruise",
+            "image": { "url": "https://karnishtourism.com/wp-content/uploads/2025/03/lotus-mega-yacht-410x250.jpg", "alt": "Lotus Mega Yacht Dinner Cruise" },
+            "category": "Superyacht",
+            "capacity": "Shared Mega Yacht",
+            "duration": "3 Hours",
+            "price": "AED 300",
+            "destination": "Dubai Marina",
+            "description": "One of the world's largest commercial superyachts offering an evening dinner cruise with panoramic views of Dubai."
+          },
+          {
+            "id": "yacht-80ft",
+            "slug": "80-ft-yacht-for-upto-30-people",
+            "title": "80 Ft Luxury Yacht Private Charter",
+            "image": { "url": "https://karnishtourism.com/wp-content/uploads/2025/03/80ft-yacht-dubai-410x250.jpg", "alt": "80 Ft Luxury Yacht Private Charter" },
+            "category": "Private Charter",
+            "capacity": "Up to 30 Guests",
+            "duration": "2+ Hours",
+            "price": "AED 3,750",
+            "destination": "Dubai Marina",
+            "description": "Ultimate private charter for large parties, corporate gatherings, or milestone celebrations across Dubai waters."
+          },
+          {
+            "id": "yacht-70ft",
+            "slug": "70-feet-yacht",
+            "title": "70 Feet Private Yacht",
+            "image": { "url": "https://karnishtourism.com/wp-content/uploads/2025/03/70feet-yacht-dubai-410x250.jpg", "alt": "70 Feet Private Yacht" },
+            "category": "Private Charter",
+            "capacity": "Up to 25 Guests",
+            "duration": "2+ Hours",
+            "price": "AED 1,800",
+            "destination": "Dubai Marina",
+            "description": "Premium mid-size yacht featuring comfortable flybridge, spacious deck, and dedicated crew."
+          }
+        ],
+        "showViewAll": true
+      }
+    },
+    {
+      "id": "voyager-cruises",
+      "type": "voyagerCruises",
+      "enabled": true,
+      "data": {
+        "heading": "Featured Voyages",
+        "description": "Cruises chosen by our travel specialists.",
+        "cruises": [
+          { "id": "cr-1", "cruiseId": "arabian-gulf-highlights-dubai", "slug": "arabian-gulf-highlights-dubai", "title": "Arabian Gulf Highlights", "image": { "url": "/images/cruise-03.jpg", "alt": "Arabian Gulf Highlights" }, "departureCity": "Dubai", "duration": "7 nights", "price": "AED 3,499" },
+          { "id": "cr-2", "cruiseId": "aegean-islands-discovery-istanbul", "slug": "aegean-islands-discovery-istanbul", "title": "Aegean Islands Discovery", "image": { "url": "/images/cruise-02.jpg", "alt": "Aegean Islands Discovery" }, "departureCity": "Istanbul", "duration": "7 nights", "price": "AED 4,250" },
+          { "id": "cr-3", "cruiseId": "strait-of-malacca-singapore", "slug": "strait-of-malacca-singapore", "title": "Strait of Malacca & Penang", "image": { "url": "/images/cruise-04.jpg", "alt": "Strait of Malacca" }, "departureCity": "Singapore", "duration": "5 nights", "price": "AED 2,890" },
+          { "id": "cr-4", "cruiseId": "western-mediterranean-barcelona", "slug": "western-mediterranean-barcelona", "title": "Western Mediterranean Explorer", "image": { "url": "/images/cruise-01.jpg", "alt": "Western Mediterranean" }, "departureCity": "Barcelona", "duration": "7 nights", "price": "AED 4,890" },
+          { "id": "cr-5", "cruiseId": "red-sea-coastal-jeddah", "slug": "red-sea-coastal-jeddah", "title": "Red Sea Coastal Voyage", "image": { "url": "/images/cruise-01.jpg", "alt": "Red Sea Coastal Voyage" }, "departureCity": "Jeddah", "duration": "4 nights", "price": "AED 2,450" }
+        ],
+        "showViewAll": true
+      }
+    },
+    {
+      "id": "voyager-promise",
+      "type": "voyagerPromise",
+      "enabled": true,
+      "data": {
+        "heading": "Your journey, our commitment",
+        "items": [
+          { "id": "specialist", "title": "Plan with a specialist", "description": "Tell us what you enjoy and our team helps you compare sailings, cabins and routes.", "visible": true },
+          { "id": "flexible", "title": "Flexible enquiry", "description": "Send an enquiry for the dates and cabin you prefer. Nothing is charged when you enquire.", "visible": true },
+          { "id": "fares", "title": "Transparent from fares", "description": "Every card shows an indicative per-person fare. We confirm the final fare and availability with you.", "visible": true },
+          { "id": "support", "title": "Support before you sail", "description": "Questions about ports, documents or timings? Reach our team before you decide and before you travel.", "visible": true }
+        ]
+      }
+    },
+    {
+      "id": "voyager-cta",
+      "type": "voyagerCta",
+      "enabled": true,
+      "data": {
+        "heading": "Not sure which cruise suits you?",
+        "description": "Tell us your preferred dates, budget and travelling party and our team will suggest sailings to look at.",
+        "image": { "url": "/images/cruise-01.jpg", "alt": "Cruise liner at sunset" },
+        "cta": { "label": "Talk to our team", "href": "/contact" }
+      }
+    }
+  ]
+}

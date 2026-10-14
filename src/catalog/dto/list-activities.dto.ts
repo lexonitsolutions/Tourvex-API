@@ -52,6 +52,14 @@ export class ListAdminActivitiesDto {
   q?: string;
 
   @IsOptional()
+  @IsString()
+  destination?: string;
+
+  @IsOptional()
+  @IsString()
+  category?: string;
+
+  @IsOptional()
   @Transform(toBoolean)
   @IsBoolean()
   published?: boolean;

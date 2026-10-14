@@ -48,6 +48,7 @@ const CARD_FIELDS = {
   themes: 1,
   collections: 1,
   published: 1,
+  allowAddToCart: 1,
   isSample: 1,
   updatedAt: 1,
 };
@@ -108,6 +109,7 @@ export class HolidaysService {
         subtitle: b.subtitle,
         description: b.description,
         image: b.image,
+        video: (b as any).video || '',
         ctaLabel: b.ctaLabel,
         ctaHref: b.ctaHref,
       })),
@@ -393,6 +395,7 @@ export class HolidaysService {
       salePrice: this.money(doc.salePrice),
       rating: doc.rating ? { average: doc.rating.average, count: doc.rating.count } : null,
       themes: doc.themes ?? [],
+      allowAddToCart: Boolean(doc.allowAddToCart),
     };
   }
 
@@ -414,7 +417,7 @@ export class HolidaysService {
       })),
       collections: doc.collections ?? [],
       ...(includeSampleFlag ? { isSample: Boolean(doc.isSample) } : {}),
-      ...(admin ? { published: doc.published, popularity: doc.popularity } : {}),
+      ...(admin ? { published: doc.published, popularity: doc.popularity, allowAddToCart: Boolean(doc.allowAddToCart) } : {}),
       updatedAt: new Date(doc.updatedAt).toISOString(),
     };
   }

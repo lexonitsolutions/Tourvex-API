@@ -272,6 +272,11 @@ export class UpdateActivityDetailsDto {
   @IsBoolean()
   published?: boolean;
 
+  @ApiPropertyOptional({ default: false, description: 'Allow customers to add this activity to the shared cart' })
+  @IsOptional()
+  @IsBoolean()
+  allowAddToCart?: boolean;
+
   @IsOptional()
   @IsBoolean()
   isSample?: boolean;

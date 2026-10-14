@@ -155,6 +155,23 @@ export const GLOBAL_FOOTER_SCHEMA: DocumentSchema = {
       ),
       link('link', 'Label and link', { required: true }),
     ]),
+    list('paymentMethods', 'Payment options', 'Payment option', 24, [
+      select('type', 'Payment provider', [
+        { value: 'visa', label: 'Visa' }, { value: 'mastercard', label: 'Mastercard' },
+        { value: 'amex', label: 'American Express' }, { value: 'discover', label: 'Discover' },
+        { value: 'jcb', label: 'JCB' }, { value: 'unionpay', label: 'UnionPay' },
+        { value: 'dinersclub', label: 'Diners Club' }, { value: 'maestro', label: 'Maestro' },
+        { value: 'gpay', label: 'Google Pay' }, { value: 'applepay', label: 'Apple Pay' },
+        { value: 'samsungpay', label: 'Samsung Pay' }, { value: 'paypal', label: 'PayPal' },
+        { value: 'alipay', label: 'Alipay' }, { value: 'wechatpay', label: 'WeChat Pay' },
+        { value: 'rupay', label: 'RuPay' }, { value: 'upi', label: 'UPI' },
+        { value: 'mada', label: 'mada' }, { value: 'klarna', label: 'Klarna' },
+        { value: 'afterpay', label: 'Afterpay' }, { value: 'banktransfer', label: 'Bank transfer' },
+        { value: 'cash', label: 'Cash' },
+      ], { required: true }),
+      text('label', 'Accessible label', 60, { required: true }),
+      toggle('visible', 'Visible'),
+    ], { help: 'Choose, reorder and hide payment methods. The matching provider logo is loaded automatically in the website footer.' }),
     text('copyright', 'Copyright line', 160, { required: true, help: 'Use {year} for the current year.' }),
   ],
 };

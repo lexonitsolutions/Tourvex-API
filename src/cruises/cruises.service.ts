@@ -71,6 +71,7 @@ const CARD_FIELDS = {
   price: 1,
   tags: 1,
   published: 1,
+  allowAddToCart: 1,
   isSample: 1,
   updatedAt: 1,
 };
@@ -246,7 +247,7 @@ export class CruisesService {
     const [docs, total, facets] = await Promise.all([
       this.cruises.aggregate<Lean>(pipeline).exec(),
       this.cruises.countDocuments(filter).exec(),
-      this.facets(base, now),
+      this.facets(base, now, !admin),
     ]);
     return {
       items: docs.map((doc) =>
@@ -468,7 +469,7 @@ export class CruisesService {
   }
 
   /** Facets over the cruises that have an upcoming departure (each cruise counted once). */
-  private async facets(base: Record<string, unknown>, now: Date) {
+  private async facets(base: Record<string, unknown>, now: Date, upcomingOnly = true) {
     const count = (field: string, limit: number): PipelineStage.FacetPipelineStage[] => [
       { $group: { _id: `$${field}`, count: { $sum: 1 } } },
       { $sort: { count: -1, _id: 1 } },
@@ -477,7 +478,7 @@ export class CruisesService {
     ];
     const [result] = await this.cruises
       .aggregate<Record<'cities' | 'lines' | 'regions' | 'months', { name: string; count: number }[]>>([
-        { $match: { ...base, departures: { $gte: startOfTodayUtc(now) } } },
+        { $match: upcomingOnly ? { ...base, departures: { $gte: startOfTodayUtc(now) } } : base },
         {
           $facet: {
             cities: count('departureCity', FACET_LIMIT),
@@ -542,6 +543,7 @@ export class CruisesService {
       portCount,
       price: derivePrice(doc),
       tags: doc.tags ?? [],
+      allowAddToCart: Boolean(doc.allowAddToCart),
     };
   }
 
@@ -569,7 +571,7 @@ export class CruisesService {
       exclusions: doc.exclusions ?? [],
       notes: doc.notes ?? '',
       ...(includeSampleFlag ? { isSample: Boolean(doc.isSample) } : {}),
-      ...(admin ? { published: doc.published, popularity: doc.popularity } : {}),
+      ...(admin ? { published: doc.published, popularity: doc.popularity, allowAddToCart: Boolean(doc.allowAddToCart) } : {}),
       updatedAt: new Date(doc.updatedAt).toISOString(),
     };
   }

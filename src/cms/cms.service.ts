@@ -86,7 +86,27 @@ export class CmsService {
   }
 
   private publishedPayload(key: string, doc: Lean | null): ContentPayload {
-    return ((doc?.published as ContentPayload | null) ?? loadDefaults(key) ?? ({ data: {} }));
+    const raw = ((doc?.published as ContentPayload | null) ?? loadDefaults(key) ?? ({ data: {} }));
+    if (key === 'page.home' && raw && Array.isArray((raw as Lean).sections)) {
+      const defaults = loadDefaults('page.home') as Lean | null;
+      if (defaults && Array.isArray(defaults.sections)) {
+        const existing = new Set((raw as Lean).sections.map((s: Lean) => s.type));
+        const missing = defaults.sections.filter((s: Lean) => !existing.has(s.type));
+        if (missing.length > 0) {
+          const sections = [...(raw as Lean).sections];
+          for (const m of missing) {
+            const defIdx = defaults.sections.findIndex((s: Lean) => s.type === m.type);
+            if (defIdx !== -1 && defIdx < sections.length) {
+              sections.splice(defIdx, 0, m);
+            } else {
+              sections.push(m);
+            }
+          }
+          return { ...(raw as object), sections } as ContentPayload;
+        }
+      }
+    }
+    return raw;
   }
 
   private statusOf(doc: Lean | null): ContentStatus {
@@ -192,12 +212,57 @@ export class CmsService {
   private view(schema: DocumentSchema, locale: string, doc: Lean | null) {
     const published = this.publishedPayload(schema.key, doc);
     const hasDraft = Boolean(doc?.draft);
+    let draft = (doc?.draft as ContentPayload | null) ?? published;
+    // Early drafts created while schemas were being introduced could contain only
+    // empty list rows. Hydrate those rows from the populated defaults so existing content is visible
+    // in the editor instead of presenting an apparently blank page. Published content is never changed.
+    if ((schema.key === 'page.events' || schema.key === 'page.holidays' || schema.key === 'page.voyager') && !doc?.version && doc?.draft) {
+      const defaults = published as Lean;
+      const current = doc.draft as Lean;
+      const currentByType = new Map((current.sections ?? []).map((section: Lean) => [section.type, section]));
+      draft = {
+        sections: (defaults.sections ?? []).map((fallback: Lean) => {
+          const section = currentByType.get(fallback.type) as Lean | undefined;
+          if (!section) return fallback;
+          const data = { ...(fallback.data ?? {}), ...(section.data ?? {}) };
+          if (fallback.type === 'eventsHero' && !(data.banners ?? []).some((item: Lean) => item.title?.trim() && item.image?.url)) data.banners = fallback.data.banners;
+          if (fallback.type === 'eventsCategories' && !(data.categories ?? []).some((item: Lean) => item.category?.trim())) data.categories = fallback.data.categories;
+          if (fallback.type === 'eventsTrendingCities' && !(data.cities ?? []).some((item: Lean) => item.city?.trim())) data.cities = fallback.data.cities;
+          if ((fallback.type === 'holidaysHero' || fallback.type === 'voyagerHero') && !(data.banners ?? []).some((item: Lean) => item.title?.trim() && (item.image?.url || item.image))) data.banners = fallback.data.banners;
+          if ((fallback.type === 'holidaysCities' || fallback.type === 'holidaysCountries' || fallback.type === 'voyagerCities' || fallback.type === 'voyagerCountries') && !(data.items ?? []).some((item: Lean) => item.name?.trim())) data.items = fallback.data.items;
+          if (fallback.type === 'holidaysPackages' && !(data.packages ?? []).some((item: Lean) => item.slug?.trim())) data.packages = fallback.data.packages;
+          if (fallback.type === 'voyagerCruises' && !(data.cruises ?? []).some((item: Lean) => item.slug?.trim())) data.cruises = fallback.data.cruises;
+          return { ...fallback, ...section, data };
+        }),
+      } as ContentPayload;
+    }
+
+    if (schema.key === 'page.home' && draft && Array.isArray((draft as Lean).sections)) {
+      const defaults = loadDefaults('page.home') as Lean | null;
+      if (defaults && Array.isArray(defaults.sections)) {
+        const existing = new Set((draft as Lean).sections.map((s: Lean) => s.type));
+        const missing = defaults.sections.filter((s: Lean) => !existing.has(s.type));
+        if (missing.length > 0) {
+          const sections = [...(draft as Lean).sections];
+          for (const m of missing) {
+            const defIdx = defaults.sections.findIndex((s: Lean) => s.type === m.type);
+            if (defIdx !== -1 && defIdx < sections.length) {
+              sections.splice(defIdx, 0, m);
+            } else {
+              sections.push(m);
+            }
+          }
+          draft = { ...(draft as object), sections } as ContentPayload;
+        }
+      }
+    }
+
     return {
       key: schema.key,
       locale,
       schema,
       sectionSchemas: sectionSchemasFor(schema),
-      draft: (doc?.draft as ContentPayload | null) ?? published,
+      draft,
       hasDraft,
       published,
       version: doc?.version ?? 0,
@@ -429,5 +494,131 @@ export class CmsService {
       if (mentions(doc.draft)) refs.push({ key: doc.key, locale: doc.locale, where: 'draft' });
     }
     return refs;
+  }
+
+  /**
+   * Calculates homepage achievement metrics dynamically from database collections.
+   * If records are absent or 0, fallback is provided so admin-verified counts can take over.
+   */
+  async getHomepageStats(foundingYear = 2011): Promise<{
+    travelers: number;
+    years: number;
+    trips: number;
+    places: number;
+  }> {
+    const currentYear = new Date().getFullYear();
+    const yearsCalculated = Math.max(currentYear - (foundingYear || 2011), 1);
+    const defaultStats = {
+      travelers: 0,
+      years: yearsCalculated,
+      trips: 0,
+      places: 0,
+    };
+
+    try {
+      const db = this.docs.db;
+      if (!db) return defaultStats;
+
+      // 1. Happy Travelers: aggregate confirmed/completed guest count from bookings
+      let travelersCount = 0;
+      try {
+        const bookingsCol = db.collection('bookings');
+        const travelerAgg = await bookingsCol
+          .aggregate<{ total: number }>([
+            {
+              $match: {
+                status: { $in: ['confirmed', 'completed'] },
+              },
+            },
+            {
+              $group: {
+                _id: null,
+                total: {
+                  $sum: {
+                    $cond: [
+                      {
+                        $gt: [
+                          {
+                            $add: [
+                              { $ifNull: ['$adults', 0] },
+                              { $ifNull: ['$children', 0] },
+                            ],
+                          },
+                          0,
+                        ],
+                      },
+                      {
+                        $add: [
+                          { $ifNull: ['$adults', 0] },
+                          { $ifNull: ['$children', 0] },
+                        ],
+                      },
+                      { $ifNull: ['$quantity', 1] },
+                    ],
+                  },
+                },
+              },
+            },
+          ])
+          .toArray();
+
+        if (travelerAgg.length > 0 && travelerAgg[0]?.total > 0) {
+          travelersCount = travelerAgg[0].total;
+        } else {
+          const count = await bookingsCol.countDocuments({
+            status: { $in: ['confirmed', 'completed'] },
+          });
+          if (count > 0) travelersCount = count;
+        }
+      } catch {
+        // Safe fallback
+      }
+
+      // 2. Active published trip options across all travel offerings
+      let tripsCount = 0;
+      try {
+        const [holidays, cruises, activities, events] = await Promise.all([
+          db.collection('holidays').countDocuments({ published: true }),
+          db.collection('cruises').countDocuments({ published: true }),
+          db.collection('activities').countDocuments({ published: true }),
+          db.collection('events').countDocuments({ published: true }),
+        ]);
+        tripsCount = holidays + cruises + activities + events;
+      } catch {
+        // Safe fallback
+      }
+
+      // 3. Unique destinations offered across published packages
+      let placesCount = 0;
+      try {
+        const [holidayDests, activityDests, cruiseDests] = await Promise.all([
+          db.collection('holidays').distinct('destinations', { published: true }),
+          db.collection('activities').distinct('destinations', { published: true }),
+          db.collection('cruises').distinct('destinations', { published: true }),
+        ]);
+        const set = new Set<string>();
+        [holidayDests, activityDests, cruiseDests].forEach((list) => {
+          if (Array.isArray(list)) {
+            list.forEach((item) => {
+              if (typeof item === 'string' && item.trim()) {
+                set.add(item.trim().toLowerCase());
+              }
+            });
+          }
+        });
+        placesCount = set.size;
+      } catch {
+        // Safe fallback
+      }
+
+      return {
+        travelers: travelersCount,
+        years: yearsCalculated,
+        trips: tripsCount,
+        places: placesCount,
+      };
+    } catch {
+      return defaultStats;
+    }
   }
 }

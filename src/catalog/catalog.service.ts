@@ -64,7 +64,7 @@ export const DETAIL_FIELDS = [
 
 const LIST_PROJECTION = Object.fromEntries(DETAIL_FIELDS.map((field) => [field, 0]));
 
-const EDITABLE_CORE_FIELDS = ['slug', 'destinations', 'categories', 'price', 'salePrice', 'imageUrl', 'published'] as const;
+const EDITABLE_CORE_FIELDS = ['slug', 'destinations', 'categories', 'price', 'salePrice', 'imageUrl', 'published', 'allowAddToCart'] as const;
 
 export interface PreparedItem {
   activity: {
@@ -143,15 +143,29 @@ export class CatalogService {
   }
 
   async listAdmin(query: ListAdminActivitiesDto) {
-    const filter: Record<string, any> = {};
+    const base: Record<string, any> = {};
+    if (query.published !== undefined) base.published = query.published;
+    if (query.sample !== undefined) base.detailsAreSample = query.sample;
+    const filter: Record<string, any> = { ...base };
     if (query.q) filter.$text = { $search: query.q };
-    if (query.published !== undefined) filter.published = query.published;
-    if (query.sample !== undefined) filter.detailsAreSample = query.sample;
+    if (query.destination) filter.destinations = query.destination;
+    if (query.category) filter.categories = query.category;
     const skip = (query.page - 1) * query.limit;
     const sort = query.sort === 'title_desc' ? { 'title.en': -1 } : query.sort === 'title_asc' ? { 'title.en': 1 } : { updatedAt: -1 };
-    const [items, total] = await Promise.all([
-      this.activities.find(filter, { title: 1, slug: 1, imageUrl: 1, gallery: 1, destinations: 1, categories: 1, published: 1, detailsAreSample: 1, updatedAt: 1 }).sort(sort as any).skip(skip).limit(query.limit).lean().exec(),
+    const facet = (field: 'destinations' | 'categories') => this.activities.aggregate<{ name: string; count: number }>([
+      { $match: base },
+      { $unwind: `$${field}` },
+      { $match: { [field]: { $type: 'string', $ne: '' } } },
+      { $group: { _id: `$${field}`, count: { $sum: 1 } } },
+      { $sort: { count: -1, _id: 1 } },
+      { $limit: 100 },
+      { $project: { _id: 0, name: '$_id', count: 1 } },
+    ]).exec();
+    const [items, total, destinations, categories] = await Promise.all([
+      this.activities.find(filter, { title: 1, slug: 1, imageUrl: 1, gallery: 1, destinations: 1, categories: 1, published: 1, allowAddToCart: 1, detailsAreSample: 1, updatedAt: 1 }).sort(sort as any).skip(skip).limit(query.limit).lean().exec(),
       this.activities.countDocuments(filter),
+      facet('destinations'),
+      facet('categories'),
     ]);
     return {
       items: items.map((item) => ({
@@ -162,10 +176,12 @@ export class CatalogService {
         destinations: item.destinations || [],
         categories: item.categories || [],
         published: Boolean(item.published),
+        allowAddToCart: Boolean(item.allowAddToCart),
         isSample: Boolean(item.detailsAreSample),
         updatedAt: item.updatedAt,
       })),
       pagination: { page: query.page, limit: query.limit, total, pages: Math.ceil(total / query.limit) },
+      facets: { destinations, categories },
     };
   }
 
@@ -366,8 +382,10 @@ export class CatalogService {
     input: ItemInput,
     now = new Date(),
     excludeCartId?: string,
+    requireCartPermission = false,
   ): Promise<PreparedItem> {
     const { activity, option } = await this.loadOption(slug, input.optionId);
+    if (requireCartPermission && !activity.allowAddToCart) throw appError(409, 'CART_DISABLED', 'Add to Cart is not available for this activity');
     const info = await this.capacityOf(slug, option, input.date, now, { excludeCartId });
     const failure = checkBookingRequest({
       option,

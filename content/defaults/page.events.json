@@ -1,0 +1,30 @@
+{
+  "sections": [
+    { "id": "events-hero", "type": "eventsHero", "enabled": true, "data": { "banners": [
+      { "id": "dubai", "eyebrow": "Events", "title": "Evenings out in Dubai", "subtitle": "Concerts, comedy, theatre and more", "description": "Browse upcoming shows in Dubai and send us an enquiry for the dates and tickets you like.", "image": { "url": "/images/event-01.jpg", "alt": "Live event in Dubai" }, "video": { "url": "" }, "cta": { "label": "Explore Dubai events", "href": "/events/in/Dubai" }, "visible": true },
+      { "id": "concerts", "eyebrow": "Concerts", "title": "Live music across the Gulf", "subtitle": "From open-air nights to orchestral evenings", "description": "Find upcoming concerts in Dubai, Abu Dhabi, Sharjah, Doha and Riyadh.", "image": { "url": "/images/event-08.jpg", "alt": "Live concert crowd" }, "video": { "url": "" }, "cta": { "label": "Browse concerts", "href": "/events/category/concerts" }, "visible": true },
+      { "id": "family", "eyebrow": "Family", "title": "Shows for all ages", "subtitle": "Family entertainment and memorable days out", "description": "Family-friendly shows and days out with simple ticket options for children and adults.", "image": { "url": "/images/event-06.jpg", "alt": "Family event" }, "video": { "url": "" }, "cta": { "label": "Browse family events", "href": "/events/category/family" }, "visible": true }
+    ] } },
+    { "id": "events-categories", "type": "eventsCategories", "enabled": true, "data": {
+      "heading": "Events by Category", "description": "Explore events that match your interests.", "categories": [
+        { "id": "concerts", "category": "Concerts", "label": "Concerts", "description": "Live shows, DJs and more", "image": { "url": "", "alt": "" }, "video": { "url": "" }, "visible": true },
+        { "id": "sports", "category": "Sports", "label": "Sports", "description": "Races, matches and tournaments", "image": { "url": "", "alt": "" }, "video": { "url": "" }, "visible": true },
+        { "id": "festivals", "category": "Festivals", "label": "Festivals", "description": "Culture, food and seasonal fun", "image": { "url": "", "alt": "" }, "video": { "url": "" }, "visible": true },
+        { "id": "comedy", "category": "Comedy", "label": "Comedy", "description": "Stand-up and live entertainment", "image": { "url": "", "alt": "" }, "video": { "url": "" }, "visible": true },
+        { "id": "family", "category": "Family", "label": "Family", "description": "Fun for every age", "image": { "url": "", "alt": "" }, "video": { "url": "" }, "visible": true },
+        { "id": "theatre", "category": "Theatre", "label": "Theatre", "description": "Plays, musicals and performances", "image": { "url": "", "alt": "" }, "video": { "url": "" }, "visible": true },
+        { "id": "exhibitions", "category": "Exhibitions", "label": "Exhibitions", "description": "Trade shows and expos", "image": { "url": "", "alt": "" }, "video": { "url": "" }, "visible": true }
+      ]
+    }},
+    { "id": "events-happening-soon", "type": "eventsHappeningSoon", "enabled": true, "data": {
+      "heading": "Upcoming Events", "description": "Events happening soon.", "limit": 12, "showViewAll": true
+    }},
+    { "id": "events-trending-cities", "type": "eventsTrendingCities", "enabled": true, "data": { "cities": [
+      { "id": "dubai", "city": "Dubai", "heading": "Trending in Dubai", "description": "Popular events coming up in Dubai.", "limit": 12, "showViewAll": true, "visible": true },
+      { "id": "abu-dhabi", "city": "Abu Dhabi", "heading": "Trending in Abu Dhabi", "description": "Popular events coming up in Abu Dhabi.", "limit": 12, "showViewAll": true, "visible": true },
+      { "id": "sharjah", "city": "Sharjah", "heading": "Trending in Sharjah", "description": "Popular events coming up in Sharjah.", "limit": 12, "showViewAll": true, "visible": true },
+      { "id": "doha", "city": "Doha", "heading": "Trending in Doha", "description": "Popular events coming up in Doha.", "limit": 12, "showViewAll": true, "visible": true },
+      { "id": "riyadh", "city": "Riyadh", "heading": "Trending in Riyadh", "description": "Popular events coming up in Riyadh.", "limit": 12, "showViewAll": true, "visible": true }
+    ] } }
+  ]
+}
