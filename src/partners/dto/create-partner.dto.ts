@@ -20,10 +20,10 @@ export class CreatePartnerDto {
   @Length(2, 80)
   name: string;
 
-  @ApiPropertyOptional({ nullable: true, description: '`/images/...` or `https://...`' })
+  @ApiPropertyOptional({ nullable: true, description: '`/images/...`, uploaded `/api/v1/media/images/...`, or `https://...`' })
   @IsOptional()
   @IsString()
-  @Matches(LOGO_PATTERN, { message: 'logo must start with /images/ or https://' })
+  @Matches(LOGO_PATTERN, { message: 'logo must be a site image, uploaded media image, or https:// URL' })
   logo?: string | null;
 
   @ApiPropertyOptional({ nullable: true, description: '`https://...` only' })

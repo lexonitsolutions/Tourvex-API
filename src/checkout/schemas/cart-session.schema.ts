@@ -26,8 +26,8 @@ export class CartItem {
   @Prop({ type: String, required: true })
   activitySlug: string;
 
-  @Prop({ type: String, enum: ['activity', 'holiday', 'cruise', 'event'], default: 'activity' })
-  productType: 'activity' | 'holiday' | 'cruise' | 'event';
+  @Prop({ type: String, enum: ['activity', 'visa', 'yacht', 'event'], default: 'activity' })
+  productType: 'activity' | 'visa' | 'yacht' | 'event';
 
   @Prop({ type: String })
   productSlug?: string;
@@ -74,6 +74,10 @@ export class CartItem {
 
   @Prop({ type: Number, required: true, min: 0 })
   children: number;
+
+  @Prop({ type: String }) nationality?: string;
+  @Prop({ type: String }) residence?: string;
+  @Prop({ type: [Number], default: [] }) minorAges?: number[];
 
   @Prop({ type: [PriceLineSchema], default: [] })
   lines: PriceLineDoc[];

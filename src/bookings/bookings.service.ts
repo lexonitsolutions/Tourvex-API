@@ -42,6 +42,9 @@ export interface ActivityBookingInput {
   serviceDay: string;
   adults: number;
   children: number;
+  nationality?: string;
+  residence?: string;
+  minorAges?: number[];
   adultUnitPrice: number;
   pickupRequired: boolean;
   pickup?: PickupDetails;
@@ -61,7 +64,7 @@ export interface ActivityBookingInput {
 }
 
 export interface PackageBookingInput extends Omit<ActivityBookingInput, 'activitySlug'> {
-  productType: 'holiday' | 'cruise' | 'event';
+  productType: 'holiday' | 'cruise' | 'event' | 'visa' | 'yacht';
   productSlug: string;
 }
 
@@ -212,6 +215,9 @@ export class BookingsService {
       serviceDate: new Date(`${input.serviceDay}T00:00:00.000Z`),
       adults: input.adults,
       children: input.children,
+      nationality: input.nationality,
+      residence: input.residence,
+      minorAges: input.minorAges,
       quantity: input.adults + input.children,
       unitPrice: input.adultUnitPrice,
       pickupRequired: input.pickupRequired,
@@ -270,6 +276,9 @@ export class BookingsService {
       serviceDate: new Date(`${input.serviceDay}T00:00:00.000Z`),
       adults: input.adults,
       children: input.children,
+      nationality: input.nationality,
+      residence: input.residence,
+      minorAges: input.minorAges,
       quantity: input.adults + input.children,
       unitPrice: input.adultUnitPrice,
       pickupRequired: false,

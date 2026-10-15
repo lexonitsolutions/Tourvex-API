@@ -31,6 +31,15 @@ export class VisaMoneyDto {
   currency: string;
 }
 
+export class VisaProcessingOptionDto {
+  @IsString() @Matches(/^[a-z0-9][a-z0-9-]{0,63}$/) id: string;
+  @IsString() @IsNotEmpty() @MaxLength(100) name: string;
+  @IsString() @IsNotEmpty() @MaxLength(100) estimatedTime: string;
+  @IsOptional() @ValidateNested() @Type(() => VisaMoneyDto) fee?: VisaMoneyDto | null;
+  @IsOptional() @IsArray() @ArrayMaxSize(10) @IsString({ each: true }) benefits?: string[];
+  @IsOptional() @IsBoolean() enabled?: boolean;
+}
+
 export class VisaStepDto {
   @ApiProperty()
   @IsString()
@@ -122,6 +131,15 @@ export class CreateVisaDto {
   @ValidateNested()
   @Type(() => VisaMoneyDto)
   startingPrice?: VisaMoneyDto | null;
+
+  @ApiPropertyOptional({ type: VisaMoneyDto }) @IsOptional() @ValidateNested() @Type(() => VisaMoneyDto) adultPrice?: VisaMoneyDto | null;
+  @ApiPropertyOptional({ type: VisaMoneyDto }) @IsOptional() @ValidateNested() @Type(() => VisaMoneyDto) minorPrice?: VisaMoneyDto | null;
+  @ApiPropertyOptional({ type: VisaMoneyDto }) @IsOptional() @ValidateNested() @Type(() => VisaMoneyDto) serviceCharge?: VisaMoneyDto | null;
+  @ApiPropertyOptional({ type: [VisaProcessingOptionDto] }) @IsOptional() @IsArray() @ArrayMaxSize(10) @ValidateNested({ each: true }) @Type(() => VisaProcessingOptionDto) processingOptions?: VisaProcessingOptionDto[];
+  @ApiPropertyOptional({ type: [String] }) @IsOptional() @IsArray() @ArrayMaxSize(300) @Matches(/^[A-Z]{2}$/, { each: true }) eligibleNationalities?: string[];
+  @ApiPropertyOptional({ type: [String] }) @IsOptional() @IsArray() @ArrayMaxSize(300) @Matches(/^[A-Z]{2}$/, { each: true }) eligibleResidences?: string[];
+  @ApiPropertyOptional({ default: 17 }) @IsOptional() @IsNumber() @Min(0) minorMaxAge?: number;
+  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(30) visaExpertWhatsapp?: string;
 
   @ApiProperty({ example: '3-5 working days' })
   @IsString()
@@ -216,6 +234,11 @@ export class CreateVisaDto {
   @IsOptional()
   @IsBoolean()
   published?: boolean;
+
+  @ApiPropertyOptional({ default: true, description: 'Allow this visa service to be added to the cart' })
+  @IsOptional()
+  @IsBoolean()
+  allowAddToCart?: boolean;
 
   @ApiPropertyOptional({ default: false })
   @IsOptional()

@@ -110,13 +110,48 @@ export class CheckoutService implements OnModuleInit, OnModuleDestroy {
       .lean()
       .exec();
     if (!dropped) return this.emptyView();
+    // Expiry releases inventory holds, but it must not erase the customer's saved cart. Rebuild the
+    // cart from current catalogue data, dropping only products that are now unpublished, disabled or unavailable.
+    const now = new Date();
+    const cartId = new Types.ObjectId();
+    const restored: CartItem[] = [];
+    for (const old of dropped.items) {
+      try {
+        const dto: CartItemDto = {
+          productType: old.productType, productSlug: old.productSlug, activitySlug: old.activitySlug,
+          bookingOnly: old.bookingOnly, optionId: old.optionId, date: old.date,
+          adults: old.adults, children: old.children,
+        };
+        const prepared = await this.prepare(dto, old.itemId, now, cartId.toString());
+        restored.push(this.buildItem(prepared, dto, old.itemId, old));
+      } catch {
+        // Deleted, unpublished, disabled and no-longer-available products are intentionally omitted.
+      }
+    }
     await this.carts
       .updateMany(
         { userId: new Types.ObjectId(user.sub), expiredNoticePending: true },
         { $set: { expiredNoticePending: false } },
       )
       .exec();
-    return this.emptyView(dropped.items, display);
+    if (!restored.length) return this.emptyView(dropped.items, display);
+    const revived = new this.carts({
+      _id: cartId, userId: new Types.ObjectId(user.sub), status: 'open', active: true,
+      expiresAt: holdExpiry(now, await this.holdMinutes()), items: restored,
+      customer: dropped.customer,
+    });
+    await this.applyPricing(revived, restored, now);
+    revived.set('items', restored);
+    try {
+      await this.save(revived);
+      return this.sessionView(revived.toObject(), display);
+    } catch (error) {
+      if ((error as { code?: number })?.code === 11000) {
+        const raced = await this.loadActive(user.sub, now);
+        if (raced) return this.sessionView(raced.toObject(), display);
+      }
+      throw error;
+    }
   }
 
   async getSession(user: AuthenticatedUser, id: string, display?: string) {
@@ -478,7 +513,7 @@ export class CheckoutService implements OnModuleInit, OnModuleDestroy {
     const existing = await this.orders.findByCart(cartId);
     if (existing && existing.bookingReferences.length >= cart.items.length) return existing;
 
-    const activityItems = cart.items.filter((item) => (item.productType ?? 'activity') === 'activity');
+    const activityItems = cart.items.filter((item) => ['activity', 'yacht'].includes(item.productType ?? 'activity'));
     const keys = activityItems.map((item) => ({ slug: item.activitySlug, optionId: item.optionId, day: item.date }));
     await this.capacity.ensureLocks(keys);
     const items = cart.items;
@@ -535,6 +570,9 @@ export class CheckoutService implements OnModuleInit, OnModuleDestroy {
               serviceDay: item.date,
               adults: item.adults,
               children: item.children,
+              nationality: item.nationality,
+              residence: item.residence,
+              minorAges: item.minorAges,
               adultUnitPrice: item.adultPrice.amount,
               pickupRequired: item.pickupRequired,
               pickup: item.pickup,
@@ -551,7 +589,7 @@ export class CheckoutService implements OnModuleInit, OnModuleDestroy {
               freeCancellationUntil: item.freeCancellationUntil,
               holdExpiresAt: cart.expiresAt,
             };
-          const booking = productType === 'activity'
+          const booking = productType === 'activity' || productType === 'yacht'
             ? await this.bookings.createActivityBooking({ ...bookingInput, activitySlug: item.activitySlug }, session)
             : await this.bookings.createPackageBooking({ ...bookingInput, productType, productSlug } as any, session);
           references.push(booking.reference);
@@ -604,7 +642,8 @@ export class CheckoutService implements OnModuleInit, OnModuleDestroy {
     const type = dto.productType ?? 'activity';
     const slug = dto.productSlug ?? dto.activitySlug;
     return (
-      (item.productType ?? 'activity') === type && (item.productSlug ?? item.activitySlug) === slug && item.optionId === dto.optionId && item.date === dto.date
+      (item.productType ?? 'activity') === type && (item.productSlug ?? item.activitySlug) === slug && item.optionId === dto.optionId && item.date === dto.date &&
+      (type !== 'visa' || (item.nationality === dto.nationality && item.residence === dto.residence && JSON.stringify(item.minorAges ?? []) === JSON.stringify(dto.minorAges ?? [])))
     );
   }
 
@@ -612,8 +651,8 @@ export class CheckoutService implements OnModuleInit, OnModuleDestroy {
     const type = dto.productType ?? 'activity';
     const slug = dto.productSlug ?? dto.activitySlug;
     if (!slug) throw appError(400, 'PRODUCT_REQUIRED', 'A package slug is required');
-    const input = { itemId, optionId: dto.optionId, date: dto.date, adults: dto.adults, children: dto.children };
-    return type === 'activity'
+    const input = { itemId, optionId: dto.optionId, date: dto.date, adults: dto.adults, children: dto.children, nationality: dto.nationality, residence: dto.residence, minorAges: dto.minorAges };
+    return type === 'activity' || type === 'yacht'
       ? this.catalog.prepareItem(slug, input, now, cartId, !dto.bookingOnly)
       : this.packages.prepare(type as PackageType, slug, input);
   }
@@ -645,6 +684,9 @@ export class CheckoutService implements OnModuleInit, OnModuleDestroy {
       date: dto.date,
       adults: dto.adults,
       children: dto.children,
+      ...(dto.nationality && { nationality: dto.nationality }),
+      ...(dto.residence && { residence: dto.residence }),
+      ...(dto.minorAges && { minorAges: dto.minorAges }),
       lines: prepared.lines,
       adultPrice: option.adultPrice,
       childPrice: option.childPrice ?? null,
@@ -762,6 +804,9 @@ export class CheckoutService implements OnModuleInit, OnModuleDestroy {
       date: item.date,
       adults: item.adults,
       children: item.children,
+      ...(item.nationality && { nationality: item.nationality }),
+      ...(item.residence && { residence: item.residence }),
+      ...(item.minorAges && { minorAges: item.minorAges }),
       pricing: {
         lines: item.lines,
         subtotal: moneyOf(item.subtotalMinor),

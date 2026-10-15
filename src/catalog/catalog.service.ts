@@ -209,6 +209,7 @@ export class CatalogService {
         ...(salePrice != null && { salePrice }),
         source: 'admin',
         published: dto.published ?? false,
+        allowAddToCart: dto.allowAddToCart ?? true,
         detailsAreSample: isSample ?? false,
       };
       const created = await this.activities.create(document as any);

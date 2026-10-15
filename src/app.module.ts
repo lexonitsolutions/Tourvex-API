@@ -44,6 +44,7 @@ import { VouchersModule } from './vouchers/vouchers.module';
 import { CustomersModule } from './customers/customers.module';
 import { LeadsModule } from './leads/leads.module';
 import { TicketsModule } from './tickets/tickets.module';
+import { WishlistModule } from './wishlist/wishlist.module';
 
 @Module({
   imports: [
@@ -91,6 +92,7 @@ import { TicketsModule } from './tickets/tickets.module';
     NotificationsModule,
     ReviewsModule,
     CheckoutModule,
+    WishlistModule,
     PlatformModule,
     HealthModule,
     MediaModule,

@@ -15,6 +15,17 @@ export class VisaMoney {
 export const VisaMoneySchema = SchemaFactory.createForClass(VisaMoney);
 
 @Schema({ _id: false })
+export class VisaProcessingOption {
+  @Prop({ type: String, required: true, trim: true }) id: string;
+  @Prop({ type: String, required: true, trim: true }) name: string;
+  @Prop({ type: String, required: true, trim: true }) estimatedTime: string;
+  @Prop({ type: VisaMoneySchema, default: null }) fee?: VisaMoney | null;
+  @Prop({ type: [String], default: [] }) benefits: string[];
+  @Prop({ type: Boolean, default: true }) enabled: boolean;
+}
+export const VisaProcessingOptionSchema = SchemaFactory.createForClass(VisaProcessingOption);
+
+@Schema({ _id: false })
 export class VisaStep {
   @Prop({ type: String, required: true, trim: true })
   title: string;
@@ -72,6 +83,15 @@ export class Visa {
   @Prop({ type: VisaMoneySchema, default: null })
   startingPrice?: VisaMoney | null;
 
+  @Prop({ type: VisaMoneySchema, default: null }) adultPrice?: VisaMoney | null;
+  @Prop({ type: VisaMoneySchema, default: null }) minorPrice?: VisaMoney | null;
+  @Prop({ type: VisaMoneySchema, default: null }) serviceCharge?: VisaMoney | null;
+  @Prop({ type: [VisaProcessingOptionSchema], default: [] }) processingOptions: VisaProcessingOption[];
+  @Prop({ type: [String], default: [] }) eligibleNationalities: string[];
+  @Prop({ type: [String], default: [] }) eligibleResidences: string[];
+  @Prop({ type: Number, default: 17, min: 0, max: 17 }) minorMaxAge: number;
+  @Prop({ type: String, default: '', trim: true }) visaExpertWhatsapp: string;
+
   @Prop({ type: String, default: '', trim: true })
   processing: string;
 
@@ -113,6 +133,9 @@ export class Visa {
 
   @Prop({ type: Boolean, default: true })
   published: boolean;
+
+  @Prop({ type: Boolean, default: true })
+  allowAddToCart: boolean;
 
   @Prop({ type: Boolean, default: false })
   isSample: boolean;

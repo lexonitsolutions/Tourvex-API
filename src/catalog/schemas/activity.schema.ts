@@ -213,7 +213,7 @@ export class Activity {
   @Prop({ type: Boolean, default: true, index: true })
   published: boolean;
 
-  @Prop({ type: Boolean, default: false })
+  @Prop({ type: Boolean, default: true })
   allowAddToCart: boolean;
 
   // Detail fields (absent until real or sample details are loaded).

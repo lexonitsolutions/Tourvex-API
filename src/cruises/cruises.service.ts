@@ -308,6 +308,7 @@ export class CruisesService {
     try {
       const created = await this.cruises.create({
         ...dto,
+        allowAddToCart: false,
         slug,
         durationDays,
         departures: normalizeDepartureDates(dto.departures),
@@ -332,7 +333,7 @@ export class CruisesService {
       .exec();
     if (!existing) throw new NotFoundException('Cruise not found');
 
-    const changes: Record<string, unknown> = { ...dto };
+    const changes: Record<string, unknown> = { ...dto, allowAddToCart: false };
     if (dto.departures !== undefined) changes.departures = normalizeDepartureDates(dto.departures);
     // When only the nights change, durationDays follows (nights + 1) unless given explicitly.
     if (dto.durationNights !== undefined && dto.durationDays === undefined) {

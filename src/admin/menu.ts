@@ -75,6 +75,7 @@ const MENU: MenuDefinition[] = [
       { id: 'catalog-cruises', label: 'Cruises', href: '/admin/catalog/cruises', icon: 'cruises', anyOf: ['catalog.read'] },
       { id: 'catalog-events', label: 'Events', href: '/admin/catalog/events', icon: 'events', anyOf: ['catalog.read'] },
       { id: 'catalog-visas', label: 'Visas', href: '/admin/catalog/visas', icon: 'visas', anyOf: ['catalog.read'] },
+      { id: 'catalog-partner-logos', label: 'Partner logos', href: '/admin/catalog/partner-logos', icon: 'partners', anyOf: ['catalog.read'] },
     ],
   },
   {

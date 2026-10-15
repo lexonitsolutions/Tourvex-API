@@ -197,6 +197,7 @@ export class HolidaysService {
     try {
       const created = await this.holidays.create({
         ...dto,
+        allowAddToCart: false,
         slug,
         durationDays: dto.durationDays ?? dto.durationNights + 1,
       });
@@ -213,7 +214,7 @@ export class HolidaysService {
   }
 
   private async updateUncached(id: string, dto: UpdateHolidayDto) {
-    const changes: Record<string, unknown> = { ...dto };
+    const changes: Record<string, unknown> = { ...dto, allowAddToCart: false };
     if (dto.durationNights !== undefined && dto.durationDays === undefined) {
       changes.durationDays = dto.durationNights + 1;
     }

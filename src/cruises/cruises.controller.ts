@@ -1,10 +1,9 @@
-import { Body, Controller, Delete, Get, Header, Headers, Param, Patch, Post, Query, Req } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Header, Param, Patch, Post, Query, Req } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { Request } from 'express';
 import { Throttle } from '@nestjs/throttler';
 import { RequirePermission } from '../admin/require-permission.decorator';
 import { AuditService } from '../audit/audit.service';
-import { OptionalUserResolver } from '../auth/optional-user.resolver';
 import {
   planCreateAudit,
   planDeleteAudit,
@@ -28,7 +27,6 @@ import { ListCruiseEnquiriesDto, UpdateCruiseEnquiryStatusDto } from './dto/upda
 export class CruisesController {
   constructor(
     private readonly cruises: CruisesService,
-    private readonly optionalUser: OptionalUserResolver,
     private readonly audit: AuditService,
   ) {}
 
@@ -94,7 +92,7 @@ export class CruisesController {
     return this.cruises.findBySlug(slug, currency?.toUpperCase().slice(0, 3) || undefined);
   }
 
-  @Public()
+  @ApiBearerAuth()
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @Post(':slug/enquiries')
   @ApiOperation({
@@ -105,10 +103,9 @@ export class CruisesController {
   async createEnquiry(
     @Param('slug') slug: string,
     @Body() dto: CreateCruiseEnquiryDto,
-    @Headers('authorization') authorization?: string,
+    @CurrentUser() user: AuthenticatedUser,
   ) {
-    const userId = await this.optionalUser.resolveUserId(authorization);
-    return this.cruises.createEnquiry(slug, dto, userId);
+    return this.cruises.createEnquiry(slug, dto, user.sub);
   }
 
   @Roles(Role.Content, Role.Admin, Role.SuperAdmin)

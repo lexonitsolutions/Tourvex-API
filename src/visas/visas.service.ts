@@ -183,7 +183,7 @@ export class VisasService {
     const slug = dto.slug ?? slugify(dto.title);
     if (!slug) throw new BadRequestException('Could not derive a slug from the title; provide one');
     try {
-      const created = await this.visas.create({ ...dto, slug });
+      const created = await this.visas.create({ ...dto, slug, allowAddToCart: dto.allowAddToCart ?? true });
       return this.toVisa(created.toObject(), true, true);
     } catch (error) {
       throw this.mapWriteError(error, slug);
@@ -373,6 +373,7 @@ export class VisasService {
       title: doc.title,
       kind: doc.kind,
       startingPrice: this.money(doc.startingPrice),
+      allowAddToCart: Boolean(doc.allowAddToCart),
       processing: doc.processing ?? '',
       validity: doc.validity ?? '',
     };
@@ -383,6 +384,14 @@ export class VisasService {
       ...this.toCard(doc),
       summary: doc.summary ?? '',
       description: doc.description ?? '',
+      adultPrice: this.money(doc.adultPrice),
+      minorPrice: this.money(doc.minorPrice),
+      serviceCharge: this.money(doc.serviceCharge),
+      processingOptions: (doc.processingOptions ?? []).filter((o: any) => admin || o.enabled !== false).map((o: any) => ({ id: o.id, name: o.name, estimatedTime: o.estimatedTime, fee: this.money(o.fee), benefits: o.benefits ?? [], enabled: o.enabled !== false })),
+      eligibleNationalities: doc.eligibleNationalities ?? [],
+      eligibleResidences: doc.eligibleResidences ?? [],
+      minorMaxAge: doc.minorMaxAge ?? 17,
+      visaExpertWhatsapp: doc.visaExpertWhatsapp ?? '',
       entries: doc.entries ?? 'varies',
       stay: doc.stay ?? '',
       highlights: doc.highlights ?? [],
@@ -394,7 +403,7 @@ export class VisasService {
       notes: doc.notes ?? '',
       sections: doc.sections ?? [],
       ...(includeSampleFlag ? { isSample: Boolean(doc.isSample) } : {}),
-      ...(admin ? { published: doc.published, popularity: doc.popularity } : {}),
+      ...(admin ? { published: doc.published, popularity: doc.popularity, allowAddToCart: Boolean(doc.allowAddToCart) } : {}),
       updatedAt: new Date(doc.updatedAt).toISOString(),
     };
   }

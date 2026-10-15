@@ -24,10 +24,10 @@ const trim = ({ value }: { value: unknown }) => (typeof value === 'string' ? val
 
 /** Add an item to the cart, or modify one (`PATCH /checkout/cart/items/:itemId`). */
 export class CartItemDto {
-  @ApiPropertyOptional({ enum: ['activity', 'holiday', 'cruise', 'event'], default: 'activity' })
+  @ApiPropertyOptional({ enum: ['activity', 'visa', 'yacht', 'event'], default: 'activity' })
   @IsOptional()
-  @IsIn(['activity', 'holiday', 'cruise', 'event'])
-  productType?: 'activity' | 'holiday' | 'cruise' | 'event';
+  @IsIn(['activity', 'visa', 'yacht', 'event'])
+  productType?: 'activity' | 'visa' | 'yacht' | 'event';
 
   @ApiPropertyOptional({ example: 'burj-khalifa-at-the-top-activities' })
   @ValidateIf((o: CartItemDto) => !o.productSlug)
@@ -67,6 +67,10 @@ export class CartItemDto {
   @Min(0)
   @Max(50)
   children: number;
+
+  @ApiPropertyOptional({ example: 'IN' }) @IsOptional() @IsString() @Matches(/^[A-Z]{2}$/) nationality?: string;
+  @ApiPropertyOptional({ example: 'AE' }) @IsOptional() @IsString() @Matches(/^[A-Z]{2}$/) residence?: string;
+  @ApiPropertyOptional({ type: [Number] }) @IsOptional() @IsArray() @ArrayMaxSize(50) @IsInt({ each: true }) @Min(0, { each: true }) @Max(17, { each: true }) minorAges?: number[];
 }
 
 export class CartQueryDto {

@@ -16,7 +16,7 @@ import {
 export type BookingDocument = HydratedDocument<Booking>;
 
 /** Service types of bookings created from holiday, cruise and event enquiries (see the stock module). */
-export const ENQUIRY_SERVICE_TYPES = ['holiday', 'cruise', 'event'] as const;
+export const ENQUIRY_SERVICE_TYPES = ['holiday', 'cruise', 'event', 'visa', 'yacht'] as const;
 export type BookingServiceType = ServiceType | (typeof ENQUIRY_SERVICE_TYPES)[number];
 
 export enum BookingStatus {
@@ -169,6 +169,15 @@ export class Booking {
 
   @Prop({ type: Number, min: 0 })
   children?: number;
+
+  @Prop({ type: String })
+  nationality?: string;
+
+  @Prop({ type: String })
+  residence?: string;
+
+  @Prop({ type: [Number], default: undefined })
+  minorAges?: number[];
 
   @Prop({ type: Boolean })
   pickupRequired?: boolean;
