@@ -71,6 +71,21 @@ export class CreateCruiseEnquiryDto {
   @MaxLength(60)
   cabinType?: string;
 
+  @ApiPropertyOptional({ minimum: 1, maximum: 10, default: 1 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(10)
+  cabins?: number;
+
+  @ApiPropertyOptional({ maxLength: 1000 })
+  @IsOptional()
+  @Transform(trim)
+  @IsString()
+  @MaxLength(1000)
+  specialRequirements?: string;
+
   @ApiPropertyOptional({ maxLength: 1000 })
   @IsOptional()
   @Transform(trim)

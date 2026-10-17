@@ -1,0 +1,71 @@
+{
+  "sections": [
+    {
+      "id": "team-hero",
+      "type": "companyHero",
+      "enabled": true,
+      "data": {
+        "eyebrow": "Our team",
+        "heading": "People who care about every detail",
+        "description": "Meet the travel specialists, coordinators and support team behind each Karnish Tourism journey.",
+        "image": { "url": "/images/7.jpg", "alt": "The Karnish Tourism team" },
+        "primaryCta": { "label": "Meet the team", "href": "/team#team" },
+        "secondaryCta": { "label": "Contact us", "href": "/contact" }
+      }
+    },
+    {
+      "id": "team-members",
+      "type": "companyTeam",
+      "enabled": true,
+      "data": {
+        "eyebrow": "Meet our team",
+        "heading": "The people behind your journey",
+        "description": "Verified team profiles are published here by our administrators.",
+        "members": []
+      }
+    },
+    {
+      "id": "team-culture",
+      "type": "companyCards",
+      "enabled": true,
+      "data": {
+        "eyebrow": "How we work",
+        "heading": "A culture built around travellers",
+        "description": "",
+        "items": [
+          {
+            "id": "culture-listen",
+            "title": "Listen closely",
+            "text": "We begin with the traveller, the purpose of the trip and the details that matter.",
+            "image": { "url": "", "alt": "" }, "link": { "label": "", "href": "" }
+          },
+          {
+            "id": "culture-collaborate",
+            "title": "Work together",
+            "text": "Planning, operations and support stay connected from enquiry through travel.",
+            "image": { "url": "", "alt": "" }, "link": { "label": "", "href": "" }
+          },
+          {
+            "id": "culture-own",
+            "title": "Take ownership",
+            "text": "We communicate clearly and follow through on every confirmed detail.",
+            "image": { "url": "", "alt": "" }, "link": { "label": "", "href": "" }
+          }
+        ]
+      }
+    },
+    {
+      "id": "team-cta",
+      "type": "companyCta",
+      "enabled": true,
+      "data": {
+        "eyebrow": "Speak with our team",
+        "heading": "Let’s plan your next journey",
+        "description": "Tell us what you have in mind and our team will help you choose the next step.",
+        "image": { "url": "/images/a4.jpg", "alt": "Plan with the Karnish Tourism team" },
+        "primaryCta": { "label": "Contact our team", "href": "/contact" },
+        "secondaryCta": { "label": "Explore holidays", "href": "/holidays" }
+      }
+    }
+  ]
+}

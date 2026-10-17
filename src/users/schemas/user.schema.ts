@@ -19,11 +19,29 @@ export enum PartnerApplicationStatus {
 
 @Schema({ _id: false })
 export class PartnerApplication {
+  @Prop({ type: String, required: true, unique: true })
+  reference: string;
+
   @Prop({ type: String, enum: PartnerApplicationStatus, required: true })
   status: PartnerApplicationStatus;
 
   @Prop({ type: String, required: true, trim: true })
   companyName: string;
+
+  @Prop({ type: String, required: true, trim: true })
+  businessType: string;
+
+  @Prop({ type: String, required: true, trim: true })
+  partnershipCategory: string;
+
+  @Prop({ type: String, required: true, trim: true })
+  country: string;
+
+  @Prop({ type: String, required: true, trim: true })
+  city: string;
+
+  @Prop({ type: String, required: true, trim: true })
+  businessDescription: string;
 
   @Prop({ type: String, trim: true })
   phone?: string;

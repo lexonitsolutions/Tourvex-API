@@ -18,6 +18,12 @@ export interface PartnerView {
   name: string;
   email: string;
   company: string | null;
+  applicationReference: string | null;
+  businessType: string | null;
+  partnershipCategory: string | null;
+  country: string | null;
+  city: string | null;
+  businessDescription: string | null;
   phone: string | null;
   website: string | null;
   message: string | null;
@@ -212,6 +218,12 @@ export class PartnersAdminService {
       name: [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email,
       email: user.email,
       company: application?.companyName ?? null,
+      applicationReference: application?.reference ?? null,
+      businessType: application?.businessType ?? null,
+      partnershipCategory: application?.partnershipCategory ?? null,
+      country: application?.country ?? null,
+      city: application?.city ?? null,
+      businessDescription: application?.businessDescription ?? null,
       phone: application?.phone ?? null,
       website: application?.website ?? null,
       message: application?.message ?? null,

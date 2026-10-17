@@ -31,14 +31,12 @@ const departureCities: SectionSchema = {
     text('heading', 'Heading', 120, { required: true }),
     textarea('description', 'Description', 260),
     toggle('show', 'Show this catalogue section'),
-    list('cruises', 'Selected cruise cards', 'Cruise', 30, [
-      text('cruiseId', 'Cruise ID', 60),
-      text('slug', 'Cruise slug', 120, { required: true }),
-      text('title', 'Cruise title', 160, { required: true }),
+    list('items', 'Departure cities', 'City', 30, [
+      text('name', 'Catalogue city name', 120, { required: true }),
+      text('label', 'Display label', 120),
       image('image', 'Card image', { aspect: '4:3' }),
-      text('departureCity', 'Departure city', 120),
-      text('duration', 'Duration', 60),
-      text('price', 'Fare', 60),
+      video('video', 'Optional card video'),
+      toggle('visible', 'Visible'),
     ], { help: 'Choose existing cruises from Catalog → Cruises, then reorder or remove them here.' }),
   ],
 };

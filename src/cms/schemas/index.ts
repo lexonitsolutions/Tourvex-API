@@ -6,6 +6,7 @@ import { ACTIVITIES_SECTION_SCHEMAS, PAGE_ACTIVITIES_SCHEMA } from './page-activ
 import { EVENTS_SECTION_SCHEMAS, PAGE_EVENTS_SCHEMA } from './page-events';
 import { HOLIDAYS_SECTION_SCHEMAS, PAGE_HOLIDAYS_SCHEMA } from './page-holidays';
 import { PAGE_VOYAGER_SCHEMA, VOYAGER_SECTION_SCHEMAS } from './page-voyager';
+import { COMPANY_PAGE_SCHEMAS, COMPANY_SECTION_SCHEMAS } from './page-company';
 
 /**
  * The schema registry: the single source of truth for what can be edited. Adding a document or a
@@ -17,6 +18,7 @@ export const DOCUMENT_SCHEMAS: readonly DocumentSchema[] = [
   PAGE_EVENTS_SCHEMA,
   PAGE_HOLIDAYS_SCHEMA,
   PAGE_VOYAGER_SCHEMA,
+  ...COMPANY_PAGE_SCHEMAS,
   GLOBAL_HEADER_SCHEMA,
   GLOBAL_FOOTER_SCHEMA,
   GLOBAL_SEO_SCHEMA,
@@ -24,10 +26,10 @@ export const DOCUMENT_SCHEMAS: readonly DocumentSchema[] = [
 
 /** Every section schema of every page document (types are unique across pages). */
 export const SECTION_SCHEMAS: Readonly<Record<string, SectionSchema>> = Object.fromEntries(
-  [...HOME_SECTION_SCHEMAS, ...ACTIVITIES_SECTION_SCHEMAS, ...EVENTS_SECTION_SCHEMAS, ...HOLIDAYS_SECTION_SCHEMAS, ...VOYAGER_SECTION_SCHEMAS].map((section) => [section.type, section]),
+  [...HOME_SECTION_SCHEMAS, ...ACTIVITIES_SECTION_SCHEMAS, ...EVENTS_SECTION_SCHEMAS, ...HOLIDAYS_SECTION_SCHEMAS, ...VOYAGER_SECTION_SCHEMAS, ...COMPANY_SECTION_SCHEMAS].map((section) => [section.type, section]),
 );
 
-export const MAX_BATCH_KEYS = 10;
+export const MAX_BATCH_KEYS = 16;
 
 export function listDocumentKeys(): string[] {
   return DOCUMENT_SCHEMAS.map((schema) => schema.key);

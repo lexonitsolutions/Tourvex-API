@@ -11,6 +11,8 @@ const valid = {
   children: 1,
   departureDate: '2026-11-14',
   cabinType: 'Balcony',
+  cabins: 2,
+  specialRequirements: 'Two adjoining cabins, if available.',
   message: 'Planning a family cruise.',
   consent: true,
 };
@@ -24,9 +26,16 @@ describe('CreateCruiseEnquiryDto', () => {
   it('accepts a complete valid enquiry and a minimal one', () => {
     expect(errorsFor({})).toEqual([]);
     const minimal: Record<string, unknown> = { ...valid };
-    for (const key of ['departureDate', 'cabinType', 'message']) delete minimal[key];
+    for (const key of ['departureDate', 'cabinType', 'cabins', 'specialRequirements', 'message']) delete minimal[key];
     const dto = plainToInstance(CreateCruiseEnquiryDto, minimal);
     expect(validateSync(dto, { whitelist: true, forbidNonWhitelisted: true })).toEqual([]);
+  });
+
+  it('validates cabin count and special requirements', () => {
+    expect(errorsFor({ cabins: 0 })).toContain('cabins');
+    expect(errorsFor({ cabins: 11 })).toContain('cabins');
+    expect(errorsFor({ cabins: 1.5 })).toContain('cabins');
+    expect(errorsFor({ specialRequirements: 'x'.repeat(1001) })).toContain('specialRequirements');
   });
 
   it('requires consent to be exactly true', () => {

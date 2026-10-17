@@ -427,12 +427,19 @@ export class HolidaysService {
   async createEnquiry(slug: string, dto: CreateHolidayEnquiryDto, userId?: string) {
     const holiday = await this.holidays
       .findOne({ slug, ...this.visible })
-      .select({ _id: 1, slug: 1 })
-      .lean<{ _id: Types.ObjectId; slug: string }>()
+      .select({ _id: 1, slug: 1, destinations: 1, country: 1 })
+      .lean<{ _id: Types.ObjectId; slug: string; destinations?: string[]; country?: string }>()
       .exec();
 
     const holidayId = holiday?._id || new Types.ObjectId();
     const holidaySlug = holiday?.slug || slug;
+
+    if (dto.children !== undefined && dto.childAges && dto.childAges.length !== dto.children) {
+      throw new BadRequestException('childAges must contain one age for every child');
+    }
+    if (dto.returnDate && dto.travelDate && dto.returnDate < dto.travelDate) {
+      throw new BadRequestException('returnDate must be on or after travelDate');
+    }
 
     for (let attempt = 0; attempt < REFERENCE_ATTEMPTS; attempt += 1) {
       try {
@@ -453,6 +460,13 @@ export class HolidaysService {
           ...(dto.nationality ? { nationality: dto.nationality } : {}),
           ...(dto.adults !== undefined ? { adults: dto.adults } : {}),
           ...(dto.children !== undefined ? { children: dto.children } : {}),
+          ...(dto.departureCity ? { departureCity: dto.departureCity } : {}),
+          destination: holiday?.destinations?.[0] || holiday?.country || holidaySlug,
+          ...(dto.returnDate ? { returnDate: new Date(dto.returnDate) } : {}),
+          rooms: dto.rooms ?? 1,
+          ...(dto.hotelCategory ? { hotelCategory: dto.hotelCategory } : {}),
+          ...(dto.childAges ? { childAges: dto.childAges } : {}),
+          ...(dto.customization ? { customization: dto.customization } : {}),
           marketingOptOut: Boolean(dto.marketingOptOut),
           ...(userId ? { userId: new Types.ObjectId(userId) } : {}),
         });
@@ -515,6 +529,13 @@ export class HolidaysService {
       totalAmount: doc.totalAmount ?? null,
       currency: doc.currency ?? 'AED',
       message: doc.message ?? null,
+      departureCity: doc.departureCity ?? null,
+      destination: doc.destination ?? null,
+      returnDate: doc.returnDate ? new Date(doc.returnDate).toISOString() : null,
+      rooms: doc.rooms ?? 1,
+      hotelCategory: doc.hotelCategory ?? null,
+      childAges: doc.childAges ?? [],
+      customization: doc.customization ?? null,
       userId: doc.userId ? String(doc.userId) : null,
       status: doc.status,
       note: doc.note ?? null,

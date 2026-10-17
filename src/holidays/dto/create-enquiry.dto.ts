@@ -2,6 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
 import {
   Equals,
+  IsArray,
   IsBoolean,
   IsEmail,
   IsInt,
@@ -108,6 +109,30 @@ export class CreateHolidayEnquiryDto {
   @Min(0)
   @Max(20)
   children?: number;
+
+  @ApiPropertyOptional({ maxLength: 120 })
+  @IsOptional() @Transform(trim) @IsString() @MaxLength(120)
+  departureCity?: string;
+
+  @ApiPropertyOptional({ description: 'Preferred return date (ISO)' })
+  @IsOptional() @IsISO8601({ strict: true })
+  returnDate?: string;
+
+  @ApiPropertyOptional({ minimum: 1, maximum: 20, default: 1 })
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(20)
+  rooms?: number;
+
+  @ApiPropertyOptional({ maxLength: 40, example: '5 star' })
+  @IsOptional() @Transform(trim) @IsString() @MaxLength(40)
+  hotelCategory?: string;
+
+  @ApiPropertyOptional({ type: [Number], description: 'One age for every child' })
+  @IsOptional() @IsArray() @IsInt({ each: true }) @Min(0, { each: true }) @Max(17, { each: true })
+  childAges?: number[];
+
+  @ApiPropertyOptional({ maxLength: 2000, description: 'Requested upgrades, transfers, sightseeing and itinerary changes' })
+  @IsOptional() @Transform(trim) @IsString() @MaxLength(2000)
+  customization?: string;
 
   @ApiPropertyOptional({ description: 'The traveller asked not to receive offers' })
   @IsOptional()

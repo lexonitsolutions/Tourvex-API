@@ -1,0 +1,140 @@
+{
+  "sections": [
+    {
+      "id": "partners-hero",
+      "type": "companyHero",
+      "enabled": true,
+      "data": {
+        "eyebrow": "Partner with us",
+        "heading": "Build better journeys together",
+        "description": "A professional partnership programme for travel agencies, operators, hospitality providers and experience businesses.",
+        "image": { "url": "/images/a2.jpg", "alt": "Business partnership with Karnish Tourism" },
+        "primaryCta": { "label": "Become a partner", "href": "/partner-form" },
+        "secondaryCta": { "label": "View partners", "href": "/partners#existing-partners" }
+      }
+    },
+    {
+      "id": "partner-categories",
+      "type": "companyCards",
+      "enabled": true,
+      "data": {
+        "eyebrow": "Who we work with",
+        "heading": "Partnerships across the travel ecosystem",
+        "description": "",
+        "items": [
+          {
+            "id": "agencies",
+            "title": "Travel agencies",
+            "text": "Collaborate on itineraries and customer fulfilment.",
+            "image": { "url": "", "alt": "" }, "link": { "label": "", "href": "" }
+          },
+          {
+            "id": "operators",
+            "title": "Tour operators",
+            "text": "Connect quality tours with suitable travellers.",
+            "image": { "url": "", "alt": "" }, "link": { "label": "", "href": "" }
+          },
+          {
+            "id": "hotels",
+            "title": "Hotels & resorts",
+            "text": "Build coordinated stays and destination packages.",
+            "image": { "url": "", "alt": "" }, "link": { "label": "", "href": "" }
+          },
+          {
+            "id": "transport",
+            "title": "Transport providers",
+            "text": "Support reliable ground and transfer services.",
+            "image": { "url": "", "alt": "" }, "link": { "label": "", "href": "" }
+          },
+          {
+            "id": "activities",
+            "title": "Activity providers",
+            "text": "Bring distinctive experiences to a wider audience.",
+            "image": { "url": "", "alt": "" }, "link": { "label": "", "href": "" }
+          },
+          {
+            "id": "marine",
+            "title": "Yacht & cruise operators",
+            "text": "Collaborate on marine and voyage products.",
+            "image": { "url": "", "alt": "" }, "link": { "label": "", "href": "" }
+          },
+          {
+            "id": "corporate",
+            "title": "Corporate partners",
+            "text": "Create practical travel solutions for organisations.",
+            "image": { "url": "", "alt": "" }, "link": { "label": "", "href": "" }
+          }
+        ]
+      }
+    },
+    {
+      "id": "partner-process",
+      "type": "companyTimeline",
+      "enabled": true,
+      "data": {
+        "eyebrow": "How it works",
+        "heading": "A clear route to partnership",
+        "items": [
+          {
+            "id": "partner-step-1",
+            "marker": "01",
+            "title": "Submit your details",
+            "text": "Tell us about your business and preferred collaboration."
+          },
+          {
+            "id": "partner-step-2",
+            "marker": "02",
+            "title": "Business review",
+            "text": "Our authorised team reviews fit, documents and requirements."
+          },
+          {
+            "id": "partner-step-3",
+            "marker": "03",
+            "title": "Discuss terms",
+            "text": "Suitable applicants receive next steps or a request for more information."
+          },
+          {
+            "id": "partner-step-4",
+            "marker": "04",
+            "title": "Approved onboarding",
+            "text": "Access is granted only after approval and onboarding are complete."
+          }
+        ]
+      }
+    },
+    {
+      "id": "partner-faq",
+      "type": "companyFaq",
+      "enabled": true,
+      "data": {
+        "eyebrow": "Partnership FAQs",
+        "heading": "Before you apply",
+        "items": [
+          {
+            "id": "partner-faq-1",
+            "question": "Does submitting an application create a partner account?",
+            "answer": "No. Applications are reviewed first. Partner access is granted only after authorised approval and onboarding."
+          },
+          {
+            "id": "partner-faq-2",
+            "question": "Which businesses can apply?",
+            "answer": "Travel agencies, operators, hotels, transport and activity providers, marine operators and corporate partners may apply."
+          }
+        ]
+      }
+    },
+    {
+      "id": "partner-cta",
+      "type": "companyCta",
+      "enabled": true,
+      "data": {
+        "eyebrow": "Start a conversation",
+        "heading": "Ready to explore a partnership?",
+        "description": "Submit your business details and our team will review the opportunity.",
+        "image": { "url": "/images/7.jpg", "alt": "Partner with Karnish Tourism" },
+        "primaryCta": { "label": "Apply now", "href": "/partner-form" },
+        "secondaryCta": { "label": "Contact us", "href": "/contact" }
+      }
+    }
+  ]
+}

@@ -42,6 +42,19 @@ export class CruiseEnquiry {
   @Prop({ type: String, trim: true })
   cabinType?: string;
 
+  @Prop({ type: Number, required: true, min: 1, max: 10, default: 1 })
+  cabins: number;
+
+  /** Immutable package facts captured when the request was submitted. */
+  @Prop({ type: String, required: true, trim: true })
+  departurePort: string;
+
+  @Prop({ type: Number, required: true, min: 1 })
+  nights: number;
+
+  @Prop({ type: String, trim: true })
+  specialRequirements?: string;
+
   @Prop({ type: String, trim: true })
   message?: string;
 

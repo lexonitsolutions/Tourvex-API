@@ -51,6 +51,14 @@ export class HolidayEnquiry {
   @Prop({ type: Number, min: 0, max: 20 })
   children?: number;
 
+  @Prop({ type: String, trim: true }) departureCity?: string;
+  @Prop({ type: String, trim: true }) destination?: string;
+  @Prop({ type: Date }) returnDate?: Date;
+  @Prop({ type: Number, min: 1, max: 20, default: 1 }) rooms?: number;
+  @Prop({ type: String, trim: true }) hotelCategory?: string;
+  @Prop({ type: [Number], default: undefined }) childAges?: number[];
+  @Prop({ type: String, trim: true }) customization?: string;
+
   @Prop({ type: Boolean, default: false })
   marketingOptOut?: boolean;
 

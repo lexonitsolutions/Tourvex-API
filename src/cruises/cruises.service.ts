@@ -370,13 +370,16 @@ export class CruisesService {
   async createEnquiry(slug: string, dto: CreateCruiseEnquiryDto, userId?: string) {
     const cruise = await this.cruises
       .findOne({ slug, ...this.visible })
-      .select({ _id: 1, slug: 1, departures: 1 })
-      .lean<{ _id: Types.ObjectId; slug: string; departures: Date[] }>()
+      .select({ _id: 1, slug: 1, departures: 1, cabins: 1, departureCity: 1, durationNights: 1 })
+      .lean<{ _id: Types.ObjectId; slug: string; departures: Date[]; cabins: { type: string }[]; departureCity: string; durationNights: number }>()
       .exec();
     if (!cruise) throw new NotFoundException('Cruise not found');
 
     if (dto.departureDate && !isUpcomingDeparture(dto.departureDate, cruise.departures)) {
       throw new BadRequestException("departureDate must be one of the cruise's upcoming departures");
+    }
+    if (dto.cabinType && !cruise.cabins.some((c) => c.type === dto.cabinType)) {
+      throw new BadRequestException("cabinType must be one of the cruise's configured cabin categories");
     }
 
     // Store only the listed fields; `consent` is recorded as the `consentAt` timestamp.
@@ -391,6 +394,10 @@ export class CruisesService {
           children: dto.children,
           ...(dto.departureDate ? { departureDate: new Date(dto.departureDate) } : {}),
           ...(dto.cabinType ? { cabinType: dto.cabinType } : {}),
+          cabins: dto.cabins ?? 1,
+          departurePort: cruise.departureCity,
+          nights: cruise.durationNights,
+          ...(dto.specialRequirements ? { specialRequirements: dto.specialRequirements } : {}),
           ...(dto.message ? { message: dto.message } : {}),
           cruiseId: cruise._id,
           cruiseSlug: cruise.slug,
@@ -592,6 +599,10 @@ export class CruisesService {
       children: doc.children,
       departureDate: doc.departureDate ? new Date(doc.departureDate).toISOString() : null,
       cabinType: doc.cabinType ?? null,
+      cabins: doc.cabins ?? 1,
+      departurePort: doc.departurePort ?? null,
+      nights: doc.nights ?? null,
+      specialRequirements: doc.specialRequirements ?? null,
       message: doc.message ?? null,
       userId: doc.userId ? String(doc.userId) : null,
       status: doc.status,

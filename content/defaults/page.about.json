@@ -1,0 +1,260 @@
+{
+  "sections": [
+    {
+      "id": "about-hero",
+      "type": "companyHero",
+      "enabled": true,
+      "data": {
+        "eyebrow": "About Karnish Tourism",
+        "heading": "Discover Karnish Tourism",
+        "description": "Creating memorable journeys, one experience at a time. We bring thoughtful planning, curated travel services and dependable support together for travellers across the UAE and beyond.",
+        "image": { "url": "/images/7.jpg", "alt": "A memorable journey with Karnish Tourism" },
+        "primaryCta": { "label": "Explore our services", "href": "/services" },
+        "secondaryCta": { "label": "Talk to our team", "href": "/contact" }
+      }
+    },
+    {
+      "id": "about-story",
+      "type": "companyStory",
+      "enabled": true,
+      "data": {
+        "eyebrow": "Our story",
+        "heading": "The journey behind Karnish",
+        "description": "Karnish Tourism was shaped around a simple purpose: help travellers move from inspiration to a well-organised journey without losing the human touch. Our team brings together curated experiences, clear communication and practical support, building every itinerary around the traveller rather than a template.",
+        "image": { "url": "/images/a4.jpg", "alt": "Travel planning and destination experience" },
+        "highlights": [
+          {
+            "id": "story-1",
+            "title": "Local perspective",
+            "text": "Thoughtful recommendations informed by destination knowledge."
+          },
+          {
+            "id": "story-2",
+            "title": "Clear planning",
+            "text": "Transparent options and practical guidance at every stage."
+          }
+        ]
+      }
+    },
+    {
+      "id": "about-stats",
+      "type": "aboutStats",
+      "enabled": false,
+      "data": {
+        "eyebrow": "Built on trust",
+        "heading": "Progress measured with integrity",
+        "description": "Only verified, admin-approved company statistics are published here.",
+        "items": []
+      }
+    },
+    {
+      "id": "about-services",
+      "type": "aboutServices",
+      "enabled": true,
+      "data": {
+        "eyebrow": "Our services",
+        "heading": "Explore what we offer",
+        "description": "One connected place for planning experiences, holidays and essential travel services.",
+        "items": [
+          { "id": "activities", "title": "Activities", "text": "Discover attractions, tours and memorable things to do.", "image": { "url": "/images/destination-a.jpg", "alt": "Travel activities" }, "link": { "label": "Explore activities", "href": "/activities" } },
+          { "id": "holidays", "title": "Holidays", "text": "Browse curated multi-day journeys and flexible holiday ideas.", "image": { "url": "/images/holidays-hero-santorini.jpg", "alt": "Holiday packages" }, "link": { "label": "Explore holidays", "href": "/holidays" } },
+          { "id": "visas", "title": "Visa services", "text": "Get clear application guidance for supported destinations.", "image": { "url": "/images/destination-e.jpg", "alt": "Visa services" }, "link": { "label": "Explore visas", "href": "/visas" } },
+          { "id": "voyages", "title": "Cruises and yachts", "text": "Set sail with cruise journeys and private yacht experiences.", "image": { "url": "/images/cruise-01.jpg", "alt": "Cruises and yachts" }, "link": { "label": "Explore voyages", "href": "/cruises" } },
+          { "id": "events", "title": "Events", "text": "Find live entertainment, shows and special experiences.", "image": { "url": "/images/event-01.jpg", "alt": "Events and shows" }, "link": { "label": "Explore events", "href": "/events" } }
+        ]
+      }
+    },
+    {
+      "id": "about-purpose",
+      "type": "companySplit",
+      "enabled": true,
+      "data": {
+        "items": [
+          {
+            "id": "mission",
+            "eyebrow": "Our mission",
+            "title": "Make remarkable travel feel simple",
+            "text": "Help every traveller choose confidently through relevant options, responsive assistance and carefully coordinated experiences.",
+            "image": { "url": "/images/a2.jpg", "alt": "Karnish Tourism mission" }
+          },
+          {
+            "id": "vision",
+            "eyebrow": "Our vision",
+            "title": "Become a trusted journey partner",
+            "text": "Build lasting relationships by making quality travel more personal, transparent and dependable.",
+            "image": { "url": "/images/a3.jpg", "alt": "Karnish Tourism vision" }
+          },
+          {
+            "id": "philosophy",
+            "eyebrow": "Our philosophy",
+            "title": "Travel built on clarity and relationships",
+            "text": "We believe personalised planning, transparent information, reliable coordination and long-term relationships create better journeys.",
+            "image": { "url": "/images/destination-f.jpg", "alt": "Karnish Tourism philosophy" }
+          }
+        ]
+      }
+    },
+    {
+      "id": "about-destinations",
+      "type": "aboutDestinations",
+      "enabled": true,
+      "data": {
+        "eyebrow": "Destinations & experiences",
+        "heading": "See where your next journey could take you",
+        "description": "Featured destinations are drawn from currently published Karnish holiday packages.",
+        "items": []
+      }
+    },
+    {
+      "id": "about-values",
+      "type": "aboutValues",
+      "enabled": true,
+      "data": {
+        "eyebrow": "Our core values",
+        "heading": "Principles behind every journey",
+        "description": "The principles our team applies when planning and supporting travel.",
+        "items": [
+          {
+            "id": "value-care",
+            "title": "Customer first",
+            "text": "We listen first and plan with the traveller in mind.",
+            "image": { "url": "", "alt": "" },
+            "link": { "label": "", "href": "" }
+          },
+          {
+            "id": "value-clarity",
+            "title": "Trust & transparency",
+            "text": "We communicate inclusions, choices and next steps clearly.",
+            "image": { "url": "", "alt": "" }, "link": { "label": "", "href": "" }
+          },
+          {
+            "id": "value-craft",
+            "title": "Quality experiences",
+            "text": "We pay attention to the details that shape a better journey.",
+            "image": { "url": "", "alt": "" }, "link": { "label": "", "href": "" }
+          },
+          {
+            "id": "value-support",
+            "title": "Innovation & simplicity",
+            "text": "We use practical technology to make planning and booking easier.",
+            "image": { "url": "", "alt": "" }, "link": { "label": "", "href": "" }
+          },
+          {
+            "id": "value-responsibility",
+            "title": "Responsible tourism",
+            "text": "We encourage thoughtful choices that respect places and communities.",
+            "image": { "url": "", "alt": "" }, "link": { "label": "", "href": "" }
+          },
+          {
+            "id": "value-partnerships",
+            "title": "Strong partnerships",
+            "text": "We value dependable collaboration across the travel ecosystem.",
+            "image": { "url": "", "alt": "" }, "link": { "label": "", "href": "" }
+          }
+        ]
+      }
+    },
+    {
+      "id": "about-founder",
+      "type": "aboutFounder",
+      "enabled": false,
+      "data": { "eyebrow": "A note from the founder", "heading": "Built with purpose", "name": "", "designation": "", "message": "", "photo": { "url": "", "alt": "" }, "signature": { "url": "", "alt": "" }, "link": { "label": "Read more", "href": "" } }
+    },
+    {
+      "id": "about-team",
+      "type": "companyTeam",
+      "enabled": true,
+      "data": { "eyebrow": "Our people", "heading": "Meet the people behind the journeys", "description": "A selected view of the team that plans and supports Karnish Tourism experiences.", "members": [] }
+    },
+    {
+      "id": "about-achievements",
+      "type": "aboutAchievements",
+      "enabled": false,
+      "data": { "eyebrow": "Milestones", "heading": "Achievements and recognition", "items": [] }
+    },
+    {
+      "id": "about-testimonials",
+      "type": "aboutTestimonials",
+      "enabled": false,
+      "data": { "eyebrow": "Customer experiences", "heading": "Journeys remembered by travellers", "items": [] }
+    },
+    { "id": "about-partners", "type": "aboutPartners", "enabled": true, "data": {} },
+    {
+      "id": "about-ecosystem",
+      "type": "aboutEcosystem",
+      "enabled": true,
+      "data": {
+        "eyebrow": "Our business ecosystem", "heading": "Travel works better when everything connects", "description": "Karnish brings travellers, services and collaborators into one coordinated journey.",
+        "items": [
+          { "id": "customers", "title": "Customer experiences", "text": "Discover, enquire and book tourism services with clear information.", "image": { "url": "", "alt": "" }, "link": { "label": "Explore experiences", "href": "/activities" } },
+          { "id": "services", "title": "Travel services", "text": "Activities, holidays, visas, cruises, yachts and events in one ecosystem.", "image": { "url": "", "alt": "" }, "link": { "label": "View services", "href": "/services" } },
+          { "id": "collaboration", "title": "Business collaboration", "text": "Work with travel agencies, hotels, suppliers and tourism partners.", "image": { "url": "", "alt": "" }, "link": { "label": "Partner with us", "href": "/partners" } }
+        ]
+      }
+    },
+    {
+      "id": "about-why",
+      "type": "aboutWhy",
+      "enabled": true,
+      "data": {
+        "eyebrow": "Why choose Karnish", "heading": "Thoughtful support at every step", "description": "A practical, traveller-focused approach without unsupported promises.",
+        "items": [
+          { "id": "personal", "title": "Personalised planning", "text": "Options shaped around your journey and preferences.", "image": { "url": "", "alt": "" }, "link": { "label": "", "href": "" } },
+          { "id": "booking", "title": "Convenient booking", "text": "Simple ways to explore and enquire across travel services.", "image": { "url": "", "alt": "" }, "link": { "label": "", "href": "" } },
+          { "id": "information", "title": "Clear information", "text": "Practical package details and transparent next steps.", "image": { "url": "", "alt": "" }, "link": { "label": "", "href": "" } },
+          { "id": "enquiries", "title": "Flexible enquiries", "text": "Ask for help when a journey needs a tailored approach.", "image": { "url": "", "alt": "" }, "link": { "label": "", "href": "" } },
+          { "id": "assistance", "title": "Dedicated assistance", "text": "Responsive guidance before, during and after planning.", "image": { "url": "", "alt": "" }, "link": { "label": "", "href": "" } },
+          { "id": "coordination", "title": "Reliable coordination", "text": "Travel components organised with care and attention.", "image": { "url": "", "alt": "" }, "link": { "label": "", "href": "" } }
+        ]
+      }
+    },
+    {
+      "id": "about-locations",
+      "type": "aboutLocations",
+      "enabled": false,
+      "data": { "eyebrow": "Our locations", "heading": "Our locations around the world", "description": "Select a verified Karnish Tourism office to view its details.", "items": [] }
+    },
+    {
+      "id": "about-journey",
+      "type": "companyTimeline",
+      "enabled": false,
+      "data": {
+        "eyebrow": "Our journey",
+        "heading": "Built one trusted trip at a time",
+        "items": [
+          {
+            "id": "journey-start",
+            "marker": "Start",
+            "title": "A local travel service takes shape",
+            "text": "The beginning of a customer-first approach to trip planning."
+          },
+          {
+            "id": "journey-grow",
+            "marker": "Growth",
+            "title": "More ways to explore",
+            "text": "Activities, holidays, visas, cruises, yachts and events brought into one service."
+          },
+          {
+            "id": "journey-now",
+            "marker": "Today",
+            "title": "Connected travel support",
+            "text": "A growing network of experiences and partners supported by a dedicated team."
+          }
+        ]
+      }
+    },
+    {
+      "id": "about-cta",
+      "type": "companyCta",
+      "enabled": true,
+      "data": {
+        "eyebrow": "Start your journey",
+        "heading": "Let us plan something memorable",
+        "description": "Browse curated holidays or speak with our team about a journey designed for you.",
+        "image": { "url": "/images/7.jpg", "alt": "Plan a journey with Karnish Tourism" },
+        "primaryCta": { "label": "Explore packages", "href": "/holidays" },
+        "secondaryCta": { "label": "Contact us", "href": "/contact" }
+      }
+    }
+  ]
+}

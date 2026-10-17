@@ -1,0 +1,150 @@
+{
+  "sections": [
+    {
+      "id": "services-hero",
+      "type": "companyHero",
+      "enabled": true,
+      "data": {
+        "eyebrow": "Our services",
+        "heading": "Every part of your journey, thoughtfully connected",
+        "description": "Explore flexible travel services with clear options and support from planning through confirmation.",
+        "image": { "url": "/images/a3.jpg", "alt": "Karnish Tourism travel services" },
+        "primaryCta": { "label": "Explore services", "href": "/services#services" },
+        "secondaryCta": { "label": "Contact us", "href": "/contact" }
+      }
+    },
+    {
+      "id": "services-intro",
+      "type": "companyStory",
+      "enabled": true,
+      "data": {
+        "eyebrow": "One travel partner",
+        "heading": "Plan with less friction",
+        "description": "From a single attraction ticket to a complete multi-day holiday, our services are designed to work together while preserving the booking and quotation flow that suits each trip.",
+        "image": { "url": "/images/a2.jpg", "alt": "Coordinated travel planning" },
+        "highlights": [
+          {
+            "id": "service-flex",
+            "title": "Flexible choices",
+            "text": "Book ready experiences or request a tailored proposal."
+          },
+          {
+            "id": "service-help",
+            "title": "Responsive support",
+            "text": "Get clear assistance when your plans need a human touch."
+          }
+        ]
+      }
+    },
+    {
+      "id": "services-catalog",
+      "type": "companyCards",
+      "enabled": true,
+      "data": {
+        "eyebrow": "Explore your way",
+        "heading": "Travel services for every plan",
+        "description": "",
+        "items": [
+          {
+            "id": "activities",
+            "title": "Activities",
+            "text": "Tours, attractions and day experiences.",
+            "image": { "url": "/images/destination-a.jpg", "alt": "Activities" },
+            "link": { "label": "Explore activities", "href": "/activities" }
+          },
+          {
+            "id": "holidays",
+            "title": "Holidays",
+            "text": "Curated multi-day itineraries and custom escapes.",
+            "image": { "url": "/images/a4.jpg", "alt": "Holiday packages" },
+            "link": { "label": "Explore holidays", "href": "/holidays" }
+          },
+          {
+            "id": "visas",
+            "title": "Visa services",
+            "text": "Guidance for eligible tourist and travel applications.",
+            "image": { "url": "/images/a2.jpg", "alt": "Visa services" },
+            "link": { "label": "View visa services", "href": "/visas" }
+          },
+          {
+            "id": "cruises",
+            "title": "Cruises & yachts",
+            "text": "Voyages, private charters and marine experiences.",
+            "image": { "url": "/images/cruise-01.jpg", "alt": "Cruises and yachts" },
+            "link": { "label": "Explore voyages", "href": "/cruises" }
+          },
+          {
+            "id": "events",
+            "title": "Events",
+            "text": "Tickets and memorable live experiences.",
+            "image": { "url": "/images/a3.jpg", "alt": "Events" },
+            "link": { "label": "Explore events", "href": "/events" }
+          }
+        ]
+      }
+    },
+    {
+      "id": "services-steps",
+      "type": "companyTimeline",
+      "enabled": true,
+      "data": {
+        "eyebrow": "How we work",
+        "heading": "From idea to confirmed journey",
+        "items": [
+          {
+            "id": "step-1",
+            "marker": "01",
+            "title": "Tell us what matters",
+            "text": "Share your destination, dates, travellers and priorities."
+          },
+          {
+            "id": "step-2",
+            "marker": "02",
+            "title": "Review clear options",
+            "text": "Compare suitable experiences or a tailored itinerary."
+          },
+          {
+            "id": "step-3",
+            "marker": "03",
+            "title": "Confirm with confidence",
+            "text": "Receive organised details and support for the journey ahead."
+          }
+        ]
+      }
+    },
+    {
+      "id": "services-faq",
+      "type": "companyFaq",
+      "enabled": true,
+      "data": {
+        "eyebrow": "Helpful answers",
+        "heading": "Service questions",
+        "items": [
+          {
+            "id": "faq-1",
+            "question": "Can I combine different services?",
+            "answer": "Yes. Contact our team when you need activities, transport, stays or documentation guidance coordinated in one plan."
+          },
+          {
+            "id": "faq-2",
+            "question": "Are all prices confirmed immediately?",
+            "answer": "Bookable products show their available pricing. Tailored holidays and partner-supplied services are confirmed through a quotation."
+          }
+        ]
+      }
+    },
+    {
+      "id": "services-cta",
+      "type": "companyCta",
+      "enabled": true,
+      "data": {
+        "eyebrow": "Ready when you are",
+        "heading": "Find the right way to travel",
+        "description": "Explore available experiences or ask our team to create a tailored plan.",
+        "image": { "url": "/images/7.jpg", "alt": "Explore Karnish Tourism services" },
+        "primaryCta": { "label": "Explore activities", "href": "/activities" },
+        "secondaryCta": { "label": "Request help", "href": "/contact" }
+      }
+    }
+  ]
+}

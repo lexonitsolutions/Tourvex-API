@@ -20,8 +20,14 @@ import { PartnerApplicationStatus, User, UserStatus } from './schemas/user.schem
 import { ResolvedIdentity, UserIdentityCache } from './user-identity.cache';
 
 export interface PartnerApplicationView {
+  reference: string;
   status: PartnerApplicationStatus;
   companyName: string;
+  businessType: string;
+  partnershipCategory: string;
+  country: string;
+  city: string;
+  businessDescription: string;
   phone?: string;
   website?: string;
   message?: string;
@@ -191,8 +197,14 @@ export class UsersService {
     dto: CreatePartnerApplicationDto,
   ): Promise<UserProfile> {
     const application = {
+      reference: `KTP-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`,
       status: PartnerApplicationStatus.Pending,
       companyName: dto.companyName,
+      businessType: dto.businessType,
+      partnershipCategory: dto.partnershipCategory,
+      country: dto.country,
+      city: dto.city,
+      businessDescription: dto.businessDescription,
       submittedAt: new Date(),
       ...(dto.phone !== undefined && { phone: dto.phone }),
       ...(dto.website !== undefined && { website: dto.website }),
@@ -268,8 +280,14 @@ export class UsersService {
       status: user.status,
       partnerApplication: application
         ? {
+            reference: application.reference,
             status: application.status,
             companyName: application.companyName,
+            businessType: application.businessType,
+            partnershipCategory: application.partnershipCategory,
+            country: application.country,
+            city: application.city,
+            businessDescription: application.businessDescription,
             phone: application.phone,
             website: application.website,
             message: application.message,
